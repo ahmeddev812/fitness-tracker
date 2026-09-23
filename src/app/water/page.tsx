@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { useFitnessData, useFitnessActions } from "@/hooks/useFitnessData";
 import { getWaterTotalForDate } from "@/lib/calculations";
@@ -15,7 +16,14 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { ChevronLeft, ChevronRight, Droplets, Trash2, Undo2, Plus, X, Coffee } from "lucide-react";
 import { m } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+const WaterWeeklyChart = dynamic(
+  () =>
+    import("@/components/charts/water-weekly-chart").then(
+      (mod) => mod.WaterWeeklyChart,
+    ),
+  { loading: () => <div className="h-40 rounded-xl bg-muted/40 animate-pulse" /> },
+);
 
 function validateAmount(value: string): string | null {
   if (!value) return "Amount is required";
@@ -292,17 +300,7 @@ export default function WaterPage() {
             <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
               Weekly Overview
             </h3>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={weeklyData}>
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid var(--color-border)" }}
-                  formatter={(value) => [`${Number(value)} ml`, "Water"]}
-                />
-                <Bar dataKey="ml" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <WaterWeeklyChart data={weeklyData} />
           </CardContent>
         </Card>
       </m.div>

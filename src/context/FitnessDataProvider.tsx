@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useUser } from "@clerk/nextjs";
 import type {
   UserProfile,
   AppSettings,
@@ -96,29 +97,35 @@ const FitnessActionsContext = createContext<FitnessActions | null>(null);
 
 // --- Provider ---
 
+const DEFAULT_PROFILE: UserProfile = {
+  name: "",
+  calorieTarget: 2200,
+  proteinTarget: 140,
+  waterTargetMl: 2500,
+  currentStreak: 0,
+  longestStreak: 0,
+};
+
+const DEFAULT_SETTINGS: AppSettings = {
+  units: "metric",
+  theme: "system",
+  notificationsEnabled: false,
+  waterReminderIntervalHours: 2,
+  mealReminderEnabled: false,
+  workoutReminderEnabled: false,
+  reduceMotion: false,
+  highContrast: false,
+  fontSize: "md",
+  customCupSizes: [250, 500, 1000],
+  caffeineTracking: false,
+};
+
 export function FitnessDataProvider({ children }: { children: ReactNode }) {
+  const { user: clerkUser, isLoaded: authLoaded } = useUser();
+
   const [isHydrated, setIsHydrated] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "",
-    calorieTarget: 2200,
-    proteinTarget: 140,
-    waterTargetMl: 2500,
-    currentStreak: 0,
-    longestStreak: 0,
-  });
-  const [settings, setSettings] = useState<AppSettings>({
-    units: "metric",
-    theme: "system",
-    notificationsEnabled: false,
-    waterReminderIntervalHours: 2,
-    mealReminderEnabled: false,
-    workoutReminderEnabled: false,
-    reduceMotion: false,
-    highContrast: false,
-    fontSize: "md",
-    customCupSizes: [250, 500, 1000],
-    caffeineTracking: false,
-  });
+  const [profile, setProfile] = useState<UserProfile>({ ...DEFAULT_PROFILE });
+  const [settings, setSettings] = useState<AppSettings>({ ...DEFAULT_SETTINGS });
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [meals, setMeals] = useState<MealEntry[]>([]);
   const [water, setWater] = useState<WaterEntry[]>([]);
@@ -132,28 +139,79 @@ export function FitnessDataProvider({ children }: { children: ReactNode }) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryEntry[]>([]);
 
-  const hydratedRef = useRef(false);
+  const hydratedForUserRef = useRef<string | null | undefined>(undefined);
 
-  // Hydrate from localStorage
-  useEffect(() => {
-    if (hydratedRef.current) return;
-    hydratedRef.current = true;
-    setProfile(storage.getProfile());
-    setSettings(storage.getSettings());
-    setWorkouts(storage.getWorkouts());
-    setMeals(storage.getMeals());
-    setWater(storage.getWater());
-    setWeights(storage.getWeights());
-    setGoals(storage.getGoals());
-    setActivity(storage.getActivity());
-    setPersonalRecords(storage.getPersonalRecords());
-    setWorkoutTemplates(storage.getWorkoutTemplates());
-    setMealTemplates(storage.getMealTemplates());
-    setProgressPhotos(storage.getProgressPhotos());
-    setAchievements(storage.getAchievements());
-    setSearchHistory(storage.getSearchHistory());
+  const userId = clerkUser?.id ?? null;
+
+  const resetToEmpty = useCallback(() => {
+    setProfile({ ...DEFAULT_PROFILE });
+    setSettings({ ...DEFAULT_SETTINGS });
+    setWorkouts([]);
+    setMeals([]);
+    setWater([]);
+    setWeights([]);
+    setGoals([]);
+    setActivity([]);
+    setPersonalRecords([]);
+    setWorkoutTemplates([]);
+    setMealTemplates([]);
+    setProgressPhotos([]);
+    setAchievements([]);
+    setSearchHistory([]);
     setIsHydrated(true);
   }, []);
+
+  // Hydrate from localStorage, scoped to the signed-in Clerk user
+  useEffect(() => {
+    if (!authLoaded) return;
+    if (hydratedForUserRef.current === userId) return;
+    hydratedForUserRef.current = userId;
+
+    // Defer so React doesn't treat storage hydration as a cascading effect write.
+    const handle = window.setTimeout(() => {
+      storage.setStorageUserId(userId);
+
+      if (!userId) {
+        resetToEmpty();
+        return;
+      }
+
+      const storedProfile = storage.getProfile();
+      if (!storedProfile.name && clerkUser) {
+        const derived =
+          clerkUser.fullName ||
+          clerkUser.firstName ||
+          clerkUser.username ||
+          "";
+        if (derived) {
+          const seeded = { ...storedProfile, name: derived };
+          storage.saveProfile(seeded);
+          setProfile(seeded);
+        } else {
+          setProfile(storedProfile);
+        }
+      } else {
+        setProfile(storedProfile);
+      }
+
+      setSettings(storage.getSettings());
+      setWorkouts(storage.getWorkouts());
+      setMeals(storage.getMeals());
+      setWater(storage.getWater());
+      setWeights(storage.getWeights());
+      setGoals(storage.getGoals());
+      setActivity(storage.getActivity());
+      setPersonalRecords(storage.getPersonalRecords());
+      setWorkoutTemplates(storage.getWorkoutTemplates());
+      setMealTemplates(storage.getMealTemplates());
+      setProgressPhotos(storage.getProgressPhotos());
+      setAchievements(storage.getAchievements());
+      setSearchHistory(storage.getSearchHistory());
+      setIsHydrated(true);
+    }, 0);
+
+    return () => window.clearTimeout(handle);
+  }, [authLoaded, userId, clerkUser, resetToEmpty]);
 
   // --- Workout Mutations ---
 
@@ -473,27 +531,8 @@ export function FitnessDataProvider({ children }: { children: ReactNode }) {
 
   const resetAllData = useCallback(() => {
     storage.clearAllFitnessData();
-    setProfile({
-      name: "",
-      calorieTarget: 2200,
-      proteinTarget: 140,
-      waterTargetMl: 2500,
-      currentStreak: 0,
-      longestStreak: 0,
-    });
-    setSettings({
-      units: "metric",
-      theme: "system",
-      notificationsEnabled: false,
-      waterReminderIntervalHours: 2,
-      mealReminderEnabled: false,
-      workoutReminderEnabled: false,
-      reduceMotion: false,
-      highContrast: false,
-      fontSize: "md",
-      customCupSizes: [250, 500, 1000],
-      caffeineTracking: false,
-    });
+    setProfile({ ...DEFAULT_PROFILE });
+    setSettings({ ...DEFAULT_SETTINGS });
     setWorkouts([]);
     setMeals([]);
     setWater([]);

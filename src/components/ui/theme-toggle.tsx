@@ -2,8 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
-import { m, AnimatePresence } from "framer-motion";
+import { Monitor, Moon, Sun } from "lucide-react";
+import { m } from "framer-motion";
 
 function useIsClient() {
   return useSyncExternalStore(
@@ -13,66 +13,73 @@ function useIsClient() {
   );
 }
 
-export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+const OPTIONS = [
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "system", label: "System", Icon: Monitor },
+  { value: "dark", label: "Dark", Icon: Moon },
+] as const;
+
+type ThemeValue = (typeof OPTIONS)[number]["value"];
+
+interface ThemeToggleProps {
+  /** Show text labels next to icons (use only in wide headers) */
+  showLabels?: boolean;
+}
+
+export function ThemeToggle({ showLabels = false }: ThemeToggleProps) {
+  const { theme, setTheme } = useTheme();
   const mounted = useIsClient();
 
   if (!mounted) {
     return (
-      <button
-        className="h-9 w-9 rounded-lg glass flex items-center justify-center"
-        aria-label="Toggle theme"
-      >
-        <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
-      </button>
+      <div
+        className={`h-8 rounded-lg glass animate-pulse ${showLabels ? "w-[140px]" : "w-[96px]"}`}
+        aria-hidden="true"
+      />
     );
   }
 
-  const isDark = resolvedTheme === "dark";
-
-  function toggle() {
-    if (theme === "system") setTheme("light");
-    else if (theme === "light") setTheme("dark");
-    else setTheme("system");
-  }
+  const active = (
+    theme === "light" || theme === "dark" || theme === "system" ? theme : "system"
+  ) as ThemeValue;
 
   return (
-    <button
-      onClick={toggle}
-      className="relative h-9 w-9 rounded-lg glass hover:bg-accent/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label="Toggle theme"
-      title={theme === "system" ? "System theme" : isDark ? "Dark" : "Light"}
+    <div
+      role="radiogroup"
+      aria-label="Theme"
+      className="relative flex h-8 shrink-0 items-center rounded-lg glass border border-border/60 p-0.5"
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {isDark ? (
-          <m.div
-            key="moon"
-            initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-            animate={{ rotate: 0, opacity: 1, scale: 1 }}
-            exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.2 }}
+      {OPTIONS.map(({ value, label, Icon }) => {
+        const selected = active === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={label}
+            title={label}
+            onClick={() => setTheme(value)}
+            className={[
+              "relative flex h-7 min-w-7 items-center justify-center gap-1 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              showLabels ? "px-2" : "px-1.5",
+              selected ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            ].join(" ")}
           >
-            <Moon className="h-4 w-4 text-foreground" />
-          </m.div>
-        ) : (
-          <m.div
-            key="sun"
-            initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
-            animate={{ rotate: 0, opacity: 1, scale: 1 }}
-            exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Sun className="h-4 w-4 text-foreground" />
-          </m.div>
-        )}
-      </AnimatePresence>
-
-      {theme === "system" && (
-        <span
-          className="absolute -bottom-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-primary"
-          aria-hidden="true"
-        />
-      )}
-    </button>
+            {selected && (
+              <m.span
+                layoutId="theme-pill"
+                className="absolute inset-0 rounded-md gradient-primary shadow-glow"
+                transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1">
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+              {showLabels && <span className="hidden lg:inline">{label}</span>}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

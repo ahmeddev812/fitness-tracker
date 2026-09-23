@@ -89,6 +89,7 @@ export function TimelineSection() {
 
   return (
     <section
+      id="journey"
       ref={ref}
       className="relative overflow-hidden bg-[#0a0a12] py-24 text-white"
     >

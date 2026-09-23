@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
         hostname: "images.pexels.com",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+  },
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
   },
 };
 

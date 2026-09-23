@@ -34,6 +34,55 @@ const STORAGE_KEYS = {
 
 type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
+let currentUserId: string | null = null;
+
+export function setStorageUserId(userId: string | null): void {
+  if (currentUserId === userId) return;
+  currentUserId = userId;
+  if (userId) migrateLegacyData(userId);
+}
+
+export function getStorageUserId(): string | null {
+  return currentUserId;
+}
+
+/** Scoped key: `fitness_x__user_abc` when signed in, bare key otherwise. */
+export function scopeKey(base: string): string {
+  if (!currentUserId) return base;
+  return `${base}__${currentUserId}`;
+}
+
+function migrateLegacyData(userId: string): void {
+  if (isServer()) return;
+  try {
+    const marker = `fitness_migrated_${userId}`;
+    if (localStorage.getItem(marker)) return;
+
+    let claimed = false;
+    for (const base of Object.values(STORAGE_KEYS)) {
+      const scoped = `${base}__${userId}`;
+      if (localStorage.getItem(scoped) === null) {
+        const legacy = localStorage.getItem(base);
+        if (legacy !== null) {
+          localStorage.setItem(scoped, legacy);
+          claimed = true;
+        }
+      }
+    }
+
+    if (claimed) {
+      localStorage.setItem(marker, "1");
+      for (const base of Object.values(STORAGE_KEYS)) {
+        localStorage.removeItem(base);
+      }
+    } else {
+      localStorage.setItem(marker, "1");
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function isServer(): boolean {
   return typeof window === "undefined";
 }
@@ -51,7 +100,7 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 function getStoredData<T>(key: StorageKey, fallback: T): T {
   if (isServer()) return fallback;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(scopeKey(key));
     return safeParse(raw, fallback);
   } catch {
     return fallback;
@@ -61,7 +110,7 @@ function getStoredData<T>(key: StorageKey, fallback: T): T {
 function setStoredData<T>(key: StorageKey, value: T): boolean {
   if (isServer()) return false;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(scopeKey(key), JSON.stringify(value));
     return true;
   } catch {
     return false;
@@ -71,9 +120,8 @@ function setStoredData<T>(key: StorageKey, value: T): boolean {
 export function clearAllFitnessData(): void {
   if (isServer()) return;
   try {
-    const keys = Object.values(STORAGE_KEYS);
-    for (const key of keys) {
-      localStorage.removeItem(key);
+    for (const key of Object.values(STORAGE_KEYS)) {
+      localStorage.removeItem(scopeKey(key));
     }
   } catch {
     // ignore
@@ -95,7 +143,7 @@ export function clearSpecificData(type: "workouts" | "meals" | "water" | "weight
   const key = keyMap[type];
   if (!key) return false;
   try {
-    localStorage.removeItem(key);
+    localStorage.removeItem(scopeKey(key));
     return true;
   } catch {
     return false;
@@ -105,12 +153,19 @@ export function clearSpecificData(type: "workouts" | "meals" | "water" | "weight
 export function getStorageUsage(): { used: number; total: number; percent: number } {
   if (isServer()) return { used: 0, total: 5 * 1024 * 1024, percent: 0 };
   let totalBytes = 0;
+  const suffix = currentUserId ? `__${currentUserId}` : null;
+  const ownedKeys = new Set(Object.values(STORAGE_KEYS).map(scopeKey));
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith("fitness_")) {
-      const value = localStorage.getItem(key) || "";
-      totalBytes += key.length + value.length;
+    if (!key || !key.startsWith("fitness_")) continue;
+    if (suffix) {
+      if (!key.endsWith(suffix)) continue;
+    } else if (!ownedKeys.has(key) && !key.startsWith("fitness_migrated_")) {
+      // When signed out, only count unscoped app keys.
+      if (key.includes("__")) continue;
     }
+    const value = localStorage.getItem(key) || "";
+    totalBytes += key.length + value.length;
   }
   const total = 5 * 1024 * 1024;
   return { used: totalBytes, total, percent: (totalBytes / total) * 100 };

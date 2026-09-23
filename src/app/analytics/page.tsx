@@ -1,63 +1,31 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import {
-  getLastNDays,
-} from "@/lib/dates";
-import {
-  sumMealsForDate,
-  getWaterTotalForDate,
-} from "@/lib/calculations";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from "recharts";
+import { getLastNDays } from "@/lib/dates";
+import { sumMealsForDate, getWaterTotalForDate } from "@/lib/calculations";
 import { m } from "framer-motion";
-import {
-  Flame,
-  Dumbbell,
-  Apple,
-  Droplets,
-  TrendingUp,
-} from "lucide-react";
+import { Flame, Dumbbell, Apple, Droplets, TrendingUp } from "lucide-react";
+
+const AnalyticsCharts = dynamic(
+  () => import("@/components/charts/analytics-charts"),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-56 rounded-2xl bg-muted/40 animate-pulse" />
+        ))}
+      </div>
+    ),
+  },
+);
 
 type Period = "7d" | "30d" | "90d";
-
-const PIE_COLORS = [
-  "var(--color-primary)",
-  "oklch(0.63 0.19 145)",
-  "oklch(0.77 0.16 75)",
-];
-
-function GlassTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="glass-strong rounded-xl px-3 py-2 shadow-premium border border-border/60 text-sm">
-      <p className="font-medium text-foreground mb-1">{label}</p>
-      {payload.map((entry, i) => (
-        <p key={i} className="text-muted-foreground">
-          <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: entry.color }} />
-          {entry.name}: <span className="font-medium text-foreground">{typeof entry.value === "number" ? entry.value.toFixed(1) : entry.value}</span>
-        </p>
-      ))}
-    </div>
-  );
-}
 
 export default function AnalyticsPage() {
   const { workouts, meals, water, weights, personalRecords, isHydrated } = useFitnessData();
@@ -134,7 +102,9 @@ export default function AnalyticsPage() {
           .find((w) => w.date === date);
         return { date: date.slice(5), weight: entry?.weightKg };
       })
-      .filter((d) => d.weight != null);
+      .filter(
+        (d): d is { date: string; weight: number } => d.weight != null,
+      );
   }, [weights, dateKeys]);
 
   const totalWorkouts = workouts.filter((w) => dateKeys.includes(w.date)).length;
@@ -190,119 +160,13 @@ export default function AnalyticsPage() {
         <StatCard label="PRs Achieved" value={totalPRs} icon={<TrendingUp className="h-4 w-4" />} delay={0.2} />
       </m.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Calories Over Time</p>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={calorieData}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip content={<GlassTooltip />} />
-                    <Bar dataKey="calories" fill="var(--color-primary)" radius={[4, 4, 0, 0]} name="Calories" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-
-        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Macro Split</p>
-              {macroData.length > 0 ? (
-                <div className="h-48 flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={macroData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
-                        {macroData.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<GlassTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <EmptyState title="No macro data" description="Log meals to see macro split" className="py-8" />
-              )}
-              <div className="flex justify-center gap-4 mt-2">
-                {macroData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i] }} />
-                    {d.name}: {d.value}g
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-
-        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Water Intake</p>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={waterData}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip content={<GlassTooltip />} />
-                    <Bar dataKey="water" fill="var(--color-info)" radius={[4, 4, 0, 0]} name="Water (ml)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-
-        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Workout Frequency</p>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={workoutFreq}>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={20} allowDecimals={false} />
-                    <Tooltip content={<GlassTooltip />} />
-                    <Bar dataKey="workouts" fill="var(--color-accent)" radius={[4, 4, 0, 0]} name="Workouts" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-      </div>
-
-      {weightTrend.length > 0 && (
-        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mb-6">
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Weight Trend</p>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={weightTrend}>
-                    <defs>
-                      <linearGradient id="weightGradAnalytics" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip content={<GlassTooltip />} />
-                        <Area type="monotone" dataKey="weight" stroke="var(--color-primary)" strokeWidth={2} fill="url(#weightGradAnalytics)" name="Weight (kg)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-      )}
+      <AnalyticsCharts
+        calorieData={calorieData}
+        macroData={macroData}
+        waterData={waterData}
+        workoutFreq={workoutFreq}
+        weightTrend={weightTrend}
+      />
 
       {muscleGroupData.length > 0 && (
         <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { m } from "framer-motion";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -10,7 +11,6 @@ import { ActivityCard } from "@/components/dashboard/activity-card";
 import { WorkoutCard } from "@/components/dashboard/workout-card";
 import { WeightCard } from "@/components/dashboard/weight-card";
 import { GoalCard } from "@/components/dashboard/goal-card";
-import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { LevelCard } from "@/components/dashboard/level-card";
@@ -19,6 +19,14 @@ import { sumMealsForDate, getRemainingCalories } from "@/lib/calculations";
 import { getWaterTotalForDate } from "@/lib/calculations";
 import { todayKey } from "@/lib/dates";
 import { Dumbbell, UtensilsCrossed, Droplets, Flame } from "lucide-react";
+
+const WeeklyChart = dynamic(
+  () =>
+    import("@/components/dashboard/weekly-chart").then(
+      (mod) => mod.WeeklyChart,
+    ),
+  { loading: () => <div className="h-64 rounded-2xl bg-muted/40 animate-pulse" /> },
+);
 
 const stagger = {
   hidden: {},

@@ -31,6 +31,12 @@ const JSON_LD = {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <link
+        rel="preload"
+        as="image"
+        href="https://assets.mixkit.co/videos/52112/52112-thumb-720-0.jpg"
+        fetchPriority="high"
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}

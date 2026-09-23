@@ -125,7 +125,7 @@ export function TestimonialsSection() {
   const testimonial = TESTIMONIALS[index];
 
   return (
-    <section ref={sectionRef} className="py-24 relative overflow-hidden">
+    <section id="stories" ref={sectionRef} className="py-24 relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <m.div
           initial={{ opacity: 0, y: 16 }}

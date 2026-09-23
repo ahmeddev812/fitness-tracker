@@ -1,12 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { m } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConfettiBurst } from "@/hooks/useConfetti";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/components/ui/toast";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 type Interval = "monthly" | "yearly";
 
@@ -68,7 +71,91 @@ const formatPrice = (n: number) => (n === 0 ? "₹0" : `₹${n.toLocaleString("e
 
 export function PricingSection() {
   const [interval, setInterval] = useState<Interval>("monthly");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const { fireConfetti, confetti } = useConfettiBurst();
+  const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+  const { plan, planLabel, openPortal } = useSubscription();
+
+  const handleCta = async (
+    planName: string,
+    isFree: boolean,
+    isLifetime: boolean
+  ) => {
+    if (isFree) {
+      fireConfetti();
+      router.push(isAuthenticated ? "/dashboard" : "/signup");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast("Sign up first to upgrade", "info");
+      router.push("/signup");
+      return;
+    }
+
+    // Already on this plan (or lifetime covers Pro) — open Stripe Customer Portal
+    const ownsPro = plan === "pro_monthly" || plan === "pro_yearly" || plan === "lifetime";
+    if (isLifetime && plan === "lifetime") {
+      try {
+        await openPortal();
+      } catch {
+        toast("Could not open billing portal", "error");
+      }
+      return;
+    }
+    if (!isLifetime && ownsPro && plan === (interval === "yearly" ? "pro_yearly" : "pro_monthly")) {
+      toast(`You're already on ${planLabel}`, "info");
+      try {
+        await openPortal();
+      } catch {
+        // portal optional
+      }
+      return;
+    }
+
+    setLoadingPlan(planName);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: isLifetime ? "lifetime" : "pro",
+          interval: isLifetime ? undefined : interval,
+        }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        toast(data.error || "Could not start checkout", "error");
+        return;
+      }
+      window.location.assign(data.url);
+    } catch {
+      toast("Could not start checkout", "error");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const ctaLabel = (planName: string, defaultLabel: string): string => {
+    if (planName === "Free") return plan === "free" ? "Current plan" : "Start free";
+    if (planName === "Lifetime") return plan === "lifetime" ? "Current plan" : defaultLabel;
+    if (planName === "Pro") {
+      if (plan === "lifetime") return "Included in Lifetime";
+      if (plan === "pro_monthly" || plan === "pro_yearly") return "Current plan";
+    }
+    return defaultLabel;
+  };
+
+  const isCurrent = (planName: string): boolean => {
+    if (planName === "Free") return plan === "free";
+    if (planName === "Lifetime") return plan === "lifetime";
+    if (planName === "Pro") {
+      return plan === "pro_monthly" || plan === "pro_yearly" || plan === "lifetime";
+    }
+    return false;
+  };
 
   return (
     <section id="pricing" className="py-24 relative">
@@ -188,17 +275,26 @@ export function PricingSection() {
                     <span className="text-sm text-muted-foreground">{periodLabel}</span>
                   </div>
 
-                  <Link href="/signup" prefetch={false} onClick={() => fireConfetti()}>
-                    <Button
-                      className={`mt-6 w-full ${
-                        plan.featured ? "gradient-primary text-white shadow-glow" : "border-border/60"
-                      }`}
-                      variant={plan.featured ? "gradient" : "outline"}
-                      data-magnetic="true"
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
+                  <Button
+                    type="button"
+                    className={`mt-6 w-full ${
+                      plan.featured && !isCurrent(plan.name) ? "gradient-primary text-white shadow-glow" : "border-border/60"
+                    }`}
+                    variant={
+                      isCurrent(plan.name)
+                        ? "outline"
+                        : plan.featured
+                          ? "gradient"
+                          : "outline"
+                    }
+                    data-magnetic="true"
+                    loading={loadingPlan === plan.name}
+                    onClick={() =>
+                      handleCta(plan.name, plan.name === "Free", plan.name === "Lifetime")
+                    }
+                  >
+                    {ctaLabel(plan.name, plan.cta)}
+                  </Button>
 
                   <ul className="mt-7 space-y-3 border-t border-border/60 pt-6">
                     {plan.features.map((feature) => (

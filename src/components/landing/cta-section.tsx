@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { m } from "framer-motion";
 import {
   Flame,
@@ -85,7 +86,7 @@ export function CtaSection() {
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a
+            <Link
               href="/signup"
               className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-8 text-base font-bold text-primary shadow-premium transition-colors hover:bg-white/90"
               data-magnetic="true"
@@ -96,7 +97,7 @@ export function CtaSection() {
                 className="h-4 w-4 transition-transform group-hover:translate-x-1"
                 aria-hidden="true"
               />
-            </a>
+            </Link>
             <a
               href="#pricing"
               className="inline-flex h-14 items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-base font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"

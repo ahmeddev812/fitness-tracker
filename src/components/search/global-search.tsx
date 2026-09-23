@@ -6,7 +6,16 @@ import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Apple, Droplets, Scale, Target, ArrowRight, Trash2 } from "lucide-react";
+import {
+  Dumbbell,
+  Apple,
+  Droplets,
+  Scale,
+  Target,
+  ArrowRight,
+  Trash2,
+  Search,
+} from "lucide-react";
 import { formatDisplayDate } from "@/lib/dates";
 import { m, AnimatePresence } from "framer-motion";
 
@@ -149,13 +158,26 @@ export function GlobalSearch() {
   return (
     <>
       <button
-        onClick={() => { setOpen(true); setQuery(""); setSelectedIndex(0); }}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors border border-border/60"
-        aria-label="Search (Ctrl+K)"
+        type="button"
+        onClick={() => {
+          setOpen(true);
+          setQuery("");
+          setSelectedIndex(0);
+        }}
+        className="group flex w-full max-w-full sm:w-auto items-center gap-2.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-sm text-muted-foreground shadow-soft transition-all hover:border-primary/30 hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+        aria-label="Open search (Ctrl+K)"
       >
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded text-muted-foreground">
-          <span className="text-xs">⌘</span>K
+        <Search
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+          aria-hidden="true"
+        />
+        <span className="flex-1 text-left truncate">Search anything</span>
+        <kbd
+          className="hidden sm:inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+          aria-hidden="true"
+        >
+          <span className="text-xs leading-none">⌘</span>
+          <span className="text-xs leading-none">K</span>
         </kbd>
       </button>
 

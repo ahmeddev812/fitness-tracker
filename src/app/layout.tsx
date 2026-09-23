@@ -30,9 +30,6 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "PULSE",
   },
-  other: {
-    "dns-prefetch": "https://assets.mixkit.co",
-  },
   openGraph: {
     title: "PULSE — Every beat counts.",
     description:
@@ -81,13 +78,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <link rel="preconnect" href="https://assets.mixkit.co" />
-        <link
-          rel="preload"
-          as="image"
-          href="https://assets.mixkit.co/videos/52112/52112-thumb-720-0.jpg"
-          fetchPriority="high"
-        />
+        <link rel="preconnect" href="https://assets.mixkit.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://assets.mixkit.co" />
       </head>
       <body className="min-h-full bg-background text-foreground">
         <Providers>

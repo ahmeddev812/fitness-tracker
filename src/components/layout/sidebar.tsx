@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { m } from "framer-motion";
 import {
@@ -12,10 +13,35 @@ import {
   Target,
   BarChart3,
   User,
+  LogOut,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { GlobalSearch } from "@/components/search/global-search";
 import { PulseLogo } from "@/components/brand/pulse-logo";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { useFitnessData } from "@/hooks/useFitnessData";
+import { useSubscription } from "@/context/SubscriptionContext";
+
+const GlobalSearch = dynamic(
+  () => import("@/components/search/global-search").then((mod) => mod.GlobalSearch),
+  {
+    loading: () => (
+      <button
+        type="button"
+        disabled
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground border border-border/60 opacity-60"
+        aria-hidden="true"
+        tabIndex={-1}
+      >
+        <span className="hidden sm:inline">Search</span>
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded text-muted-foreground">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </button>
+    ),
+  },
+);
 
 const MAIN_NAV = [
   { href: "/dashboard", label: "Dashboard", Icon: Home },
@@ -33,6 +59,11 @@ const ACCOUNT_NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const { profile } = useFitnessData();
+  const { plan, planLabel, isLoading: planLoading } = useSubscription();
+  const displayName = profile.name || user?.name || "";
+  const isPaid = plan !== "free";
 
   function isActive(href: string) {
     return pathname === href || (href === "/dashboard" && pathname === "/");
@@ -45,7 +76,7 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-border/60">
-        <Link href="/dashboard" aria-label="PULSE home">
+        <Link href="/" aria-label="PULSE home">
           <PulseLogo size="md" />
         </Link>
       </div>
@@ -149,12 +180,50 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer with theme toggle + search */}
-      <div className="p-3 border-t border-border/60">
-        <div className="flex items-center gap-2 px-2 py-1.5">
+      {/* User chip + footer */}
+      <div className="border-t border-border/60 p-3 space-y-3">
+        {user && (
+          <div className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-accent/10 transition-colors">
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 min-w-0 flex-1"
+            >
+              <UserAvatar
+                src={profile.avatar}
+                clerkUrl={user.imageUrl}
+                name={displayName}
+                size="md"
+                className="border border-border"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-foreground truncate">
+                  {displayName || "Profile"}
+                </span>
+                <span className="block text-xs text-muted-foreground truncate">
+                  {user.email}
+                </span>
+                {isPaid && !planLoading && (
+                  <Badge variant="gradient" className="mt-1 text-[10px] px-1.5 py-0">
+                    {planLabel}
+                  </Badge>
+                )}
+              </span>
+            </Link>
+            <button
+              type="button"
+              aria-label="Sign out"
+              onClick={() => void logout()}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <div className="px-2 space-y-2">
           <GlobalSearch />
-          <span className="text-xs text-muted-foreground">Theme</span>
-          <ThemeToggle />
+          <div className="flex justify-center">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </aside>

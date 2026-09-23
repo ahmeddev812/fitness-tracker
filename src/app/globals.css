@@ -295,6 +295,48 @@
 }
 
 /* ============================================
+   SECTION ARRIVAL (nav link scroll target)
+   ============================================ */
+
+[id="demo"],
+[id="features"],
+[id="journey"],
+[id="stories"],
+[id="pricing"],
+[id="faq"] {
+  scroll-margin-top: 5.5rem; /* clear sticky header */
+}
+
+.section-arrive {
+  animation: section-arrive 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.section-arrive::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgb(108 92 231 / 0.22), transparent 70%),
+    linear-gradient(180deg, rgb(162 155 254 / 0.12), transparent 40%);
+  animation: section-arrive-glow 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes section-arrive {
+  0%   { opacity: 0.72; transform: translateY(-18px) scale(0.985); }
+  40%  { opacity: 1; transform: translateY(2px) scale(1.004); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes section-arrive-glow {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============================================
    ACCESSIBILITY
    ============================================ */
 

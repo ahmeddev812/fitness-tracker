@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { m } from "framer-motion";
 import { Camera, Code, Mail, MessageCircle, Send, Users } from "lucide-react";
 import { PulseLogo } from "@/components/brand/pulse-logo";
@@ -10,10 +11,12 @@ const COLUMNS = [
   {
     title: "Product",
     links: [
+      { label: "Preview", href: "#demo" },
       { label: "Features", href: "#features" },
-      { label: "Live demo", href: "#demo" },
+      { label: "Journey", href: "#journey" },
+      { label: "Stories", href: "#stories" },
       { label: "Pricing", href: "#pricing" },
-      { label: "Changelog", href: "#" },
+      { label: "FAQ", href: "#faq" },
     ],
   },
   {
@@ -120,7 +123,9 @@ export function Footer() {
 
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
-            <PulseLogo size="md" />
+            <Link href="/" className="inline-block" aria-label="PULSE home">
+              <PulseLogo size="md" />
+            </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               PULSE is a local-first fitness companion. Track workouts,
               nutrition, and hydration — your data never leaves your device.
@@ -165,7 +170,7 @@ export function Footer() {
             © {new Date().getFullYear()} PULSE. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">
-            Made with ❤️ for people who show up. Every beat counts.
+            “Discipline beats motivation when motivation goes home.”
           </p>
         </div>
       </div>

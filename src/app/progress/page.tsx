@@ -1,12 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { useFitnessData, useFitnessActions } from "@/hooks/useFitnessData";
 import { toLocalDate } from "@/lib/dates";
 import type { WeightEntry } from "@/types/fitness";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProgressSummary } from "@/components/progress/progress-summary";
-import { WeightChart } from "@/components/progress/weight-chart";
 import { WeightForm } from "@/components/progress/weight-form";
 import { WeightHistory } from "@/components/progress/weight-history";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -17,15 +17,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { Plus, Scale, Ruler, TrendingUp, Activity } from "lucide-react";
 import { m } from "framer-motion";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+
+const WeightChart = dynamic(
+  () =>
+    import("@/components/progress/weight-chart").then(
+      (mod) => mod.WeightChart,
+    ),
+  { loading: () => <div className="h-72 rounded-2xl bg-muted/40 animate-pulse" /> },
+);
+
+const MeasurementsChart = dynamic(
+  () => import("@/components/progress/measurements-chart"),
+  { loading: () => <div className="h-72 rounded-2xl bg-muted/40 animate-pulse" /> },
+);
 
 function formatDay(dateKey: string): string {
   const parts = dateKey.split("-");
@@ -68,38 +72,6 @@ function calculateBodyFatPercent(
     );
   }
   return null;
-}
-
-const MEASUREMENT_COLORS: Record<string, string> = {
-  waist: "#f97316",
-  chest: "#3b82f6",
-  arms: "#a855f7",
-  thighs: "#22c55e",
-};
-
-function MeasurementTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ value: number; dataKey: string }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="glass-strong rounded-xl px-3 py-2 shadow-premium border border-border/60 text-sm">
-      <p className="font-medium text-foreground mb-1">{label}</p>
-      {payload.map((entry, i) => (
-        <p key={i} className="text-muted-foreground">
-          {entry.dataKey}:{" "}
-          <span className="font-medium text-foreground">
-            {Number(entry.value).toFixed(1)} cm
-          </span>
-        </p>
-      ))}
-    </div>
-  );
 }
 
 export default function ProgressPage() {
@@ -299,68 +271,7 @@ export default function ProgressPage() {
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
                 Body Measurements
               </p>
-              <div className="h-64" aria-hidden="true">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={measurementsData}>
-                    <XAxis
-                      dataKey="label"
-                      className="text-xs"
-                      tick={{ fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={Math.max(
-                        Math.floor(measurementsData.length / 6),
-                        0
-                      )}
-                    />
-                    <YAxis
-                      className="text-xs"
-                      tick={{ fontSize: 11 }}
-                      width={40}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v: number) => v.toFixed(0)}
-                    />
-                    <Tooltip content={<MeasurementTooltip />} />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{ fontSize: "12px" }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="waist"
-                      stroke={MEASUREMENT_COLORS.waist}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="chest"
-                      stroke={MEASUREMENT_COLORS.chest}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="arms"
-                      stroke={MEASUREMENT_COLORS.arms}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="thighs"
-                      stroke={MEASUREMENT_COLORS.thighs}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <MeasurementsChart data={measurementsData} />
             </CardContent>
           </Card>
         </m.div>
