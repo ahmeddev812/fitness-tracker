@@ -117,23 +117,3 @@ Built with a **local-first** philosophy: your data stays on your device. No serv
 | **Deployment** | [Vercel](https://vercel.com/) |
 
 ---
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- npm / pnpm / yarn / bun
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/fitness-tracker.git
-cd fitness-tracker
-
-# Install dependencies
-npm install
-
-# Run the development server
-npm run dev
