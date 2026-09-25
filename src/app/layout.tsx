@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { RouteShell } from "@/components/layout/route-shell";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -92,6 +93,7 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-foreground">
         <Providers>
           <ServiceWorkerRegistration />
+          <InstallPrompt />
           <RouteShell>{children}</RouteShell>
         </Providers>
       </body>
