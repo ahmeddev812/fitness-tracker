@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import * as storage from "@/lib/storage";
 import { PulseLogo } from "@/components/brand/pulse-logo";
@@ -25,18 +25,29 @@ function hasCompleteProfile(): boolean {
   }
 }
 
+/** Auth entry pages — never bounce a user away from these. */
+function isAuthEntryPage(pathname: string): boolean {
+  return (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/sso-callback"
+  );
+}
+
 const HOLD_MS = 1200;
 
 /**
  * Full-screen splash — standalone installs only.
- * After hold: auth state → /login | /onboarding | /dashboard
+ * Runs ONCE per app cold start: after hold, route by auth state
+ * (/login | /onboarding | /dashboard). Never re-fires on client-side
+ * navigation — otherwise /signup in the PWA bounced back to /login.
  */
 export function SplashScreen() {
-  const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const completedRef = useRef(false);
 
   useEffect(() => {
     if (!isStandalone()) return;
@@ -47,31 +58,35 @@ export function SplashScreen() {
   }, []);
 
   useEffect(() => {
-    if (!visible || isLoading) return;
+    if (!visible || isLoading || completedRef.current) return;
 
     const hold = window.setTimeout(() => {
-      if (!isAuthenticated) {
+      // Gate has run — never schedule it again for this app session.
+      completedRef.current = true;
+
+      const finish = (to?: string) => {
         setExiting(true);
         window.setTimeout(() => {
-          router.replace("/login");
+          if (to) router.replace(to);
+          setVisible(false);
         }, 280);
+      };
+
+      if (!isAuthenticated) {
+        // Stay put when the user is already on an auth page (e.g. /signup).
+        const here = window.location.pathname;
+        finish(isAuthEntryPage(here) ? undefined : "/login");
         return;
       }
       if (!hasCompleteProfile()) {
-        setExiting(true);
-        window.setTimeout(() => {
-          router.replace("/onboarding");
-        }, 280);
+        finish("/onboarding");
         return;
       }
-      setExiting(true);
-      window.setTimeout(() => {
-        router.replace("/dashboard");
-      }, 280);
+      finish("/dashboard");
     }, HOLD_MS);
 
     return () => window.clearTimeout(hold);
-  }, [visible, isLoading, isAuthenticated, router, pathname]);
+  }, [visible, isLoading, isAuthenticated, router]);
 
   if (!visible) return null;
 
