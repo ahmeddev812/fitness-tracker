@@ -11,10 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { generateDemoData } from "@/lib/seed";
 import { PulseLogo } from "@/components/brand/pulse-logo";
-import { PlanStep } from "@/components/onboarding/plan-step";
 import {
   User,
-  Activity,
   Target,
   Settings,
   ChevronRight,
@@ -23,17 +21,14 @@ import {
   Dumbbell,
   Apple,
   Droplets,
-  CreditCard,
 } from "lucide-react";
 import type { ActivityLevel } from "@/types/fitness";
 import * as storage from "@/lib/storage";
 
 const STEPS = [
-  { icon: User, label: "Profile" },
-  { icon: Activity, label: "Body Stats" },
-  { icon: Target, label: "Goals" },
+  { icon: User, label: "About You" },
+  { icon: Target, label: "Your Goals" },
   { icon: Settings, label: "Preferences" },
-  { icon: CreditCard, label: "Plan" },
 ];
 
 const ACTIVITY_LEVELS = [
@@ -60,43 +55,30 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [demoChoice, setDemoChoice] = useState<"demo" | "fresh" | null>(null);
 
-  // Step 1: Profile
+  // Step 1: About You (name, age, gender + body stats)
   const [name, setName] = useState(user?.name || "");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
-
-  // Step 2: Body stats
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
+
+  // Step 2: Goals + activity + target weight
+  const [goalType, setGoalType] = useState("weight_loss");
   const [targetWeight, setTargetWeight] = useState("");
   const [activityLevel, setActivityLevel] = useState("moderate");
-
-  // Step 3: Goals
-  const [goalType, setGoalType] = useState("weight_loss");
   const [targetDate, setTargetDate] = useState("");
-  const [weeklyFrequency, setWeeklyFrequency] = useState("3");
 
-  // Step 4: Preferences
+  // Step 3: Preferences
   const [units, setUnits] = useState("metric");
   const [calorieTarget, setCalorieTarget] = useState("2200");
   const [proteinTarget, setProteinTarget] = useState("140");
   const [waterTarget, setWaterTarget] = useState("2500");
-
-  // Step 5: Plan (marketing only — free | pro)
-  const [planChoice, setPlanChoice] = useState<"free" | "pro">("free");
 
   const MAX_STEP = STEPS.length - 1;
   const next = () => setStep((s) => Math.min(s + 1, MAX_STEP));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleComplete = () => {
-    // Save plan preference (local, marketing only)
-    try {
-      window.localStorage.setItem("fitness_plan", planChoice);
-    } catch {
-      // ignore
-    }
-
     // Save profile
     actions.updateProfile({
       name: name.trim() || user?.name || "User",
@@ -157,9 +139,11 @@ export default function OnboardingPage() {
     }),
   };
 
+  const progressPercent = ((step + 1) / STEPS.length) * 100;
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute top-0 left-1/4 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-accent/8 blur-[120px]" />
       </div>
@@ -221,38 +205,29 @@ export default function OnboardingPage() {
         {/* Wizard */}
         {demoChoice !== null && (
           <div className="glass-strong rounded-2xl border border-border overflow-hidden">
-            {/* Step indicator */}
+            {/* Progress */}
             <div className="px-6 pt-6 pb-4">
-              <div className="flex items-center justify-between mb-4">
-                {STEPS.map((s, i) => (
-                  <div
-                    key={s.label}
-                    className="flex items-center gap-2"
-                  >
-                    <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        i === step
-                          ? "gradient-primary text-white shadow-glow"
-                          : i < step
-                          ? "bg-success/20 text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {i < step ? "✓" : i + 1}
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <div
-                        className={`hidden sm:block h-0.5 w-8 rounded ${
-                          i < step ? "bg-success" : "bg-muted"
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Step {step + 1} of {STEPS.length}
+                </p>
+                <p className="text-xs font-medium text-foreground">{STEPS[step].label}</p>
               </div>
-              <p className="text-sm font-medium text-foreground">
-                Step {step + 1} of {STEPS.length}: {STEPS[step].label}
-              </p>
+              <div
+                role="progressbar"
+                aria-valuenow={Math.round(progressPercent)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Onboarding progress"
+                className="h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+              >
+                <m.div
+                  className="h-full rounded-full gradient-primary"
+                  initial={false}
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                />
+              </div>
             </div>
 
             {/* Step content */}
@@ -275,82 +250,55 @@ export default function OnboardingPage() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Alex"
                     />
-                    <Input
-                      label="Age"
-                      type="number"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      placeholder="25"
-                      min="10"
-                      max="120"
-                    />
-                    <Select
-                      label="Gender"
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                      options={[
-                        { value: "male", label: "Male" },
-                        { value: "female", label: "Female" },
-                        { value: "other", label: "Other" },
-                      ]}
-                      placeholder="Select gender"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Age"
+                        type="number"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        placeholder="25"
+                        min="10"
+                        max="120"
+                      />
+                      <Select
+                        label="Gender"
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        options={[
+                          { value: "male", label: "Male" },
+                          { value: "female", label: "Female" },
+                          { value: "other", label: "Other" },
+                        ]}
+                        placeholder="Select"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Height (cm)"
+                        type="number"
+                        value={height}
+                        onChange={(e) => setHeight(e.target.value)}
+                        placeholder="175"
+                        min="100"
+                        max="250"
+                      />
+                      <Input
+                        label="Weight (kg)"
+                        type="number"
+                        value={weight}
+                        onChange={(e) => setWeight(e.target.value)}
+                        placeholder="75"
+                        min="30"
+                        max="300"
+                        step="0.1"
+                      />
+                    </div>
                   </m.div>
                 )}
 
                 {step === 1 && (
                   <m.div
                     key="step1"
-                    custom={1}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.3 }}
-                    className="space-y-4"
-                  >
-                    <Input
-                      label="Height (cm)"
-                      type="number"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      placeholder="175"
-                      min="100"
-                      max="250"
-                    />
-                    <Input
-                      label="Current Weight (kg)"
-                      type="number"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      placeholder="75"
-                      min="30"
-                      max="300"
-                      step="0.1"
-                    />
-                    <Input
-                      label="Target Weight (kg)"
-                      type="number"
-                      value={targetWeight}
-                      onChange={(e) => setTargetWeight(e.target.value)}
-                      placeholder="70"
-                      min="30"
-                      max="300"
-                      step="0.1"
-                      hint="Optional — skip if not applicable"
-                    />
-                    <Select
-                      label="Activity Level"
-                      value={activityLevel}
-                      onChange={(e) => setActivityLevel(e.target.value)}
-                      options={ACTIVITY_LEVELS}
-                    />
-                  </m.div>
-                )}
-
-                {step === 2 && (
-                  <m.div
-                    key="step2"
                     custom={1}
                     variants={slideVariants}
                     initial="enter"
@@ -375,6 +323,25 @@ export default function OnboardingPage() {
                         </button>
                       ))}
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Target Weight (kg)"
+                        type="number"
+                        value={targetWeight}
+                        onChange={(e) => setTargetWeight(e.target.value)}
+                        placeholder="70"
+                        min="30"
+                        max="300"
+                        step="0.1"
+                        hint="Optional"
+                      />
+                      <Select
+                        label="Activity Level"
+                        value={activityLevel}
+                        onChange={(e) => setActivityLevel(e.target.value)}
+                        options={ACTIVITY_LEVELS}
+                      />
+                    </div>
                     <Input
                       label="Target Date"
                       type="date"
@@ -382,30 +349,12 @@ export default function OnboardingPage() {
                       onChange={(e) => setTargetDate(e.target.value)}
                       hint="Optional — when do you want to reach your goal?"
                     />
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Weekly Workout Frequency
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="range"
-                          min="1"
-                          max="7"
-                          value={weeklyFrequency}
-                          onChange={(e) => setWeeklyFrequency(e.target.value)}
-                          className="flex-1 accent-primary"
-                        />
-                        <span className="text-sm font-bold text-foreground w-12 text-center">
-                          {weeklyFrequency}x
-                        </span>
-                      </div>
-                    </div>
                   </m.div>
                 )}
 
-                {step === 3 && (
+                {step === 2 && (
                   <m.div
-                    key="step3"
+                    key="step2"
                     custom={1}
                     variants={slideVariants}
                     initial="enter"
@@ -423,50 +372,38 @@ export default function OnboardingPage() {
                         { value: "imperial", label: "Imperial (lb, in, oz)" },
                       ]}
                     />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Calories / day"
+                        type="number"
+                        value={calorieTarget}
+                        onChange={(e) => setCalorieTarget(e.target.value)}
+                        hint="Based on activity"
+                      />
+                      <Input
+                        label="Protein / day (g)"
+                        type="number"
+                        value={proteinTarget}
+                        onChange={(e) => setProteinTarget(e.target.value)}
+                        hint="1.6-2.2g per kg"
+                      />
+                    </div>
                     <Input
-                      label="Daily Calorie Target"
-                      type="number"
-                      value={calorieTarget}
-                      onChange={(e) => setCalorieTarget(e.target.value)}
-                      hint="Based on your activity level"
-                    />
-                    <Input
-                      label="Daily Protein Target (g)"
-                      type="number"
-                      value={proteinTarget}
-                      onChange={(e) => setProteinTarget(e.target.value)}
-                      hint="Recommended: 1.6-2.2g per kg of body weight"
-                    />
-                    <Input
-                      label="Daily Water Target (ml)"
+                      label="Water / day (ml)"
                       type="number"
                       value={waterTarget}
                       onChange={(e) => setWaterTarget(e.target.value)}
-                      hint="Recommended: 2000-3000ml per day"
+                      hint="Recommended: 2000-3000ml"
                     />
-                  </m.div>
-                )}
-
-                {step === 4 && (
-                  <m.div
-                    key="step4"
-                    custom={1}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.3 }}
-                  >
-                    <PlanStep selected={planChoice} onSelect={setPlanChoice} />
                   </m.div>
                 )}
               </AnimatePresence>
             </div>
 
             {/* Navigation */}
-            <div className="px-6 pb-6 flex items-center justify-between">
+            <div className="px-6 pb-6 flex items-center justify-between gap-3">
               {step > 0 ? (
-                <Button variant="ghost" onClick={prev}>
+                <Button variant="outline" size="lg" onClick={prev}>
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back
                 </Button>
@@ -474,12 +411,12 @@ export default function OnboardingPage() {
                 <div />
               )}
               {step < MAX_STEP ? (
-                <Button variant="gradient" onClick={next}>
+                <Button variant="gradient" size="lg" onClick={next}>
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : (
-                <Button variant="gradient" onClick={handleComplete}>
+                <Button variant="gradient" size="lg" onClick={handleComplete}>
                   <Sparkles className="h-4 w-4 mr-1.5" />
                   Let&apos;s Go!
                 </Button>

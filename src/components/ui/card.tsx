@@ -37,7 +37,7 @@ export function Card({
 
 export function CardHeader({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={["flex flex-col space-y-1.5 p-5", className].join(" ")} {...props}>
+    <div className={["flex flex-col space-y-1.5 p-6", className].join(" ")} {...props}>
       {children}
     </div>
   );
@@ -61,7 +61,7 @@ export function CardDescription({ className = "", children, ...props }: HTMLAttr
 
 export function CardContent({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={["p-5 pt-0", className].join(" ")} {...props}>
+    <div className={["p-6 pt-0", className].join(" ")} {...props}>
       {children}
     </div>
   );
@@ -69,7 +69,7 @@ export function CardContent({ className = "", children, ...props }: HTMLAttribut
 
 export function CardFooter({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={["flex items-center p-5 pt-0", className].join(" ")} {...props}>
+    <div className={["flex items-center p-6 pt-0", className].join(" ")} {...props}>
       {children}
     </div>
   );

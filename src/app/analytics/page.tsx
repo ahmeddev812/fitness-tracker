@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { getLastNDays } from "@/lib/dates";
@@ -121,9 +121,9 @@ export default function AnalyticsPage() {
     return (
       <div>
         <PageHeader title="Analytics" description="Your fitness insights" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-4"><div className="space-y-2"><div className="h-4 w-16 bg-muted rounded animate-pulse" /><div className="h-6 w-12 bg-muted rounded animate-pulse" /></div></Card>
+        <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} className="p-6"><div className="space-y-2"><div className="h-4 w-16 bg-muted rounded animate-pulse" /><div className="h-6 w-12 bg-muted rounded animate-pulse" /></div></Card>
           ))}
         </div>
       </div>
@@ -133,16 +133,17 @@ export default function AnalyticsPage() {
   return (
     <div>
       <PageHeader title="Analytics" description="Your fitness insights">
-        <div className="flex gap-1 bg-muted/60 rounded-xl p-1">
+        <div className="flex gap-1 rounded-xl bg-muted/60 p-1" role="group" aria-label="Date range">
           {(["7d", "30d", "90d"] as Period[]).map((p) => (
             <Button
               key={p}
               size="sm"
-              variant={period === p ? "gradient" : "ghost"}
+              variant={period === p ? "primary" : "ghost"}
               onClick={() => setPeriod(p)}
-              className="rounded-lg text-xs"
+              aria-pressed={period === p}
+              className="rounded-lg text-sm"
             >
-              {p}
+              {p === "7d" ? "7 days" : p === "30d" ? "30 days" : "90 days"}
             </Button>
           ))}
         </div>
@@ -151,7 +152,7 @@ export default function AnalyticsPage() {
       <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6"
+        className="mb-6 grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-5"
       >
         <StatCard label="Workouts" value={totalWorkouts} icon={<Dumbbell className="h-4 w-4" />} delay={0} />
         <StatCard label="Meals Logged" value={totalMeals} icon={<Apple className="h-4 w-4" />} delay={0.05} />
@@ -170,25 +171,23 @@ export default function AnalyticsPage() {
 
       {muscleGroupData.length > 0 && (
         <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Most Trained Exercises</p>
-              <div className="space-y-2">
-                {muscleGroupData.map((item, i) => (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
-                    <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full gradient-primary rounded-full transition-all duration-500"
-                        style={{ width: `${(item.count / muscleGroupData[0].count) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-foreground w-24 truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground">{item.count}x</span>
+          <Card className="p-6">
+            <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">Most Trained Exercises</p>
+            <div className="space-y-2">
+              {muscleGroupData.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-3">
+                  <span className="w-4 text-xs text-muted-foreground">{i + 1}</span>
+                  <div className="h-6 flex-1 overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${(item.count / muscleGroupData[0].count) * 100}%` }}
+                    />
                   </div>
-                ))}
-              </div>
-            </CardContent>
+                  <span className="w-24 truncate text-xs font-medium text-foreground">{item.name}</span>
+                  <span className="text-xs text-muted-foreground">{item.count}x</span>
+                </div>
+              ))}
+            </div>
           </Card>
         </m.div>
       )}

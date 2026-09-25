@@ -1,24 +1,31 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import Link from "next/link";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { getGreeting, formatDisplayDate, todayKey } from "@/lib/dates";
+import { getLevel, calculateXp } from "@/lib/level";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Sparkles } from "lucide-react";
+import { Flame, Sparkles, Zap } from "lucide-react";
 import { m } from "framer-motion";
 
 function DashboardHeaderImpl() {
-  const { profile, isHydrated } = useFitnessData();
+  const { profile, workouts, meals, water, weights, goals, personalRecords, isHydrated } =
+    useFitnessData();
   const { user } = useAuth();
   const { plan, planLabel, isLoading: planLoading } = useSubscription();
 
+  const level = useMemo(() => {
+    const xp = calculateXp({ workouts, meals, water, weights, goals, personalRecords });
+    return getLevel(xp).level;
+  }, [workouts, meals, water, weights, goals, personalRecords]);
+
   if (!isHydrated) {
     return (
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div className="space-y-2">
           <div className="h-8 w-64 bg-muted rounded-lg animate-pulse" />
           <div className="h-4 w-40 bg-muted rounded-lg animate-pulse" />
@@ -39,39 +46,35 @@ function DashboardHeaderImpl() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex items-center justify-between mb-8"
+      className="mb-8 flex items-center justify-between gap-4"
     >
-      <div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl sm:text-3xl font-bold gradient-text">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {displayName ? `${greeting}, ${displayName}` : greeting}
           </h1>
           {streak > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold glass-strong text-orange-400">
-              <Flame className="h-4 w-4 fill-orange-400" />
-              {streak}
-              {profile.longestStreak > 1 && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  / {profile.longestStreak} best
-                </span>
-              )}
+            <span className="inline-flex items-center gap-1 rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-500">
+              <Flame className="h-3.5 w-3.5 fill-orange-500" aria-hidden="true" />
+              {streak}d
             </span>
           )}
+          <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
+            <Zap className="h-3 w-3 text-warning" aria-hidden="true" />
+            Lv {level}
+          </Badge>
           {isPaid && !planLoading && (
-            <Badge variant="gradient" className="gap-1 shadow-glow">
+            <Badge variant="outline" className="gap-1 text-primary">
               <Sparkles className="h-3 w-3" aria-hidden="true" />
               {planLabel}
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {today}
-          {user?.email ? ` · ${user.email}` : ""}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{today}</p>
         {!displayName && (
           <Link
             href="/profile"
-            className="text-sm text-primary hover:underline mt-1 inline-block"
+            className="mt-1 inline-block text-sm text-primary hover:underline"
           >
             Complete your profile
           </Link>
@@ -80,16 +83,8 @@ function DashboardHeaderImpl() {
       <Link
         href="/profile"
         aria-label="Open profile"
-        className="flex items-center gap-3 p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
+        className="flex shrink-0 items-center gap-3 rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
       >
-        <span className="hidden sm:block text-right">
-          <span className="block text-sm font-semibold text-foreground">
-            {displayName || "Profile"}
-          </span>
-          <span className="block text-xs text-muted-foreground">
-            {isPaid ? planLabel : "View profile"}
-          </span>
-        </span>
         <UserAvatar
           src={profile.avatar}
           clerkUrl={user?.imageUrl}

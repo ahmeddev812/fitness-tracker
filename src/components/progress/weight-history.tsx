@@ -1,7 +1,7 @@
 "use client";
 
 import type { WeightEntry } from "@/types/fitness";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit3, Trash2 } from "lucide-react";
@@ -21,10 +21,13 @@ export function WeightHistory({ entries, onEdit, onDelete }: WeightHistoryProps)
 
   return (
     <div>
-      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-        Weight Log ({entries.length} {entries.length === 1 ? "entry" : "entries"})
+      <h3 className="text-lg font-semibold text-foreground mb-3">
+        Weight Log
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          {entries.length} {entries.length === 1 ? "entry" : "entries"}
+        </span>
       </h3>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {sorted.map((entry, i) => {
           const hasMeasurements =
             entry.waistCm != null ||
@@ -39,8 +42,7 @@ export function WeightHistory({ entries, onEdit, onDelete }: WeightHistoryProps)
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.03 }}
             >
-              <Card hover>
-                <CardContent className="p-3">
+              <Card hover className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -76,7 +78,6 @@ export function WeightHistory({ entries, onEdit, onDelete }: WeightHistoryProps)
                       </Button>
                     </div>
                   </div>
-                </CardContent>
               </Card>
             </m.div>
           );

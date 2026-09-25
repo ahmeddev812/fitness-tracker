@@ -2,7 +2,7 @@
 
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { sumMealsForDate, getRemainingCalories, getProgressPercent, clampPercent } from "@/lib/calculations";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { m } from "framer-motion";
 
@@ -15,9 +15,15 @@ export function DailySummary({ date }: DailySummaryProps) {
 
   if (!isHydrated) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-4"><div className="space-y-2"><div className="h-4 w-16 bg-muted rounded animate-pulse" /><div className="h-6 w-12 bg-muted rounded animate-pulse" /><div className="h-2 w-full bg-muted rounded-full animate-pulse" /></div></Card>
+          <Card key={i} className="p-6">
+            <div className="space-y-3">
+              <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+              <div className="h-8 w-20 bg-muted rounded animate-pulse" />
+              <div className="h-2 w-full bg-muted rounded-full animate-pulse" />
+            </div>
+          </Card>
         ))}
       </div>
     );
@@ -66,7 +72,7 @@ export function DailySummary({ date }: DailySummaryProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
       {macros.map((macro, i) => (
         <m.div
           key={macro.label}
@@ -74,30 +80,33 @@ export function DailySummary({ date }: DailySummaryProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
         >
-          <Card hover className="p-4">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">{macro.label}</p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold tabular-nums">{macro.value}</span>
-                <span className="text-xs text-muted-foreground">/ {macro.target} {macro.unit}</span>
-              </div>
-              <ProgressBar
-                value={macro.target > 0 ? clampPercent(macro.percent) : 0}
-                size="sm"
-                variant={macro.label === "Calories" && remaining != null && remaining < 0 ? "warning" : "gradient"}
-                showValue={false}
-                className="mt-2"
-              />
-              {macro.remaining != null && (
-                <p className="text-xs mt-1.5">
-                  {macro.remaining < 0 ? (
-                    <span className="text-destructive">Over by {Math.abs(macro.remaining)} {macro.unit}</span>
-                  ) : (
-                    <span className="text-muted-foreground">{macro.remaining} {macro.unit} remaining</span>
-                  )}
-                </p>
-              )}
-            </CardContent>
+          <Card hover className="p-6">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {macro.label}
+            </p>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-3xl font-bold leading-tight tabular-nums">{macro.value}</span>
+              <span className="text-xs text-muted-foreground">
+                / {macro.target > 0 ? macro.target : "—"} {macro.unit}
+              </span>
+            </div>
+            <ProgressBar
+              value={macro.target > 0 ? clampPercent(macro.percent) : 0}
+              max={100}
+              size="sm"
+              variant={macro.label === "Calories" && macro.remaining != null && macro.remaining < 0 ? "warning" : "primary"}
+              showValue={false}
+              className="mt-3"
+            />
+            {macro.remaining != null && (
+              <p className="mt-2 text-xs">
+                {macro.remaining < 0 ? (
+                  <span className="text-destructive">Over by {Math.abs(macro.remaining)} {macro.unit}</span>
+                ) : (
+                  <span className="text-muted-foreground">{macro.remaining} {macro.unit} remaining</span>
+                )}
+              </p>
+            )}
           </Card>
         </m.div>
       ))}

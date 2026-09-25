@@ -9,13 +9,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ProgressSummary } from "@/components/progress/progress-summary";
 import { WeightForm } from "@/components/progress/weight-form";
 import { WeightHistory } from "@/components/progress/weight-history";
+import { PhotosTab } from "@/components/progress/photos-tab";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
-import { Plus, Scale, Ruler, TrendingUp, Activity } from "lucide-react";
+import { Plus, Scale, Ruler, TrendingUp, Activity, LineChart, Camera, Ruler as RulerIcon } from "lucide-react";
 import { m } from "framer-motion";
 
 const WeightChart = dynamic(
@@ -83,6 +85,7 @@ export default function ProgressPage() {
   } = useFitnessActions();
   const { toast } = useToast();
 
+  const [tab, setTab] = useState("weight");
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<WeightEntry | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -168,6 +171,18 @@ export default function ProgressPage() {
     }));
   }, [weights]);
 
+  const measurementEntries = useMemo(
+    () =>
+      weights.filter(
+        (w) =>
+          w.waistCm != null ||
+          w.chestCm != null ||
+          w.armsCm != null ||
+          w.thighsCm != null
+      ),
+    [weights]
+  );
+
   const rateOfChange = useMemo(() => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -199,113 +214,160 @@ export default function ProgressPage() {
         title="Progress"
         description="Track your weight and body measurements"
       >
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-1.5" /> Log Weight
-        </Button>
+        {tab !== "photos" && (
+          <Button variant="gradient" onClick={openAdd}>
+            <Plus className="h-4 w-4 mr-1.5" /> Log Weight
+          </Button>
+        )}
       </PageHeader>
 
       <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="mb-6"
       >
-        <ProgressSummary />
-      </m.div>
-
-      <m.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-      >
-        {bmi != null && (
-          <StatCard
-            label="BMI"
-            value={bmi.toFixed(1)}
-            icon={<Scale className="h-4 w-4" />}
-            description={getBmiCategory(bmi)}
-            delay={0.15}
-          />
-        )}
-
-        {bodyFat != null && (
-          <StatCard
-            label="Body Fat"
-            value={`${bodyFat.toFixed(1)}%`}
-            icon={<Activity className="h-4 w-4" />}
-            description="Navy method"
-            delay={0.2}
-          />
-        )}
-
-        {latestWeight?.waistCm != null && (
-          <StatCard
-            label="Waist"
-            value={`${latestWeight.waistCm.toFixed(1)} cm`}
-            icon={<Ruler className="h-4 w-4" />}
-            delay={0.25}
-          />
-        )}
-
-        {rateOfChange != null && (
-          <StatCard
-            label="Rate of Change"
-            value={`${rateOfChange.rate > 0 ? "+" : ""}${rateOfChange.rate.toFixed(2)} kg/week`}
-            icon={<TrendingUp className="h-4 w-4" />}
-            trend={rateOfChange.trend}
-            trendValue="last 30 days"
-            delay={0.3}
-          />
-        )}
-      </m.div>
-
-      {measurementsData.length >= 2 && (
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.35 }}
-          className="mb-6"
-        >
-          <Card variant="elevated" className="p-5">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
-                Body Measurements
-              </p>
-              <MeasurementsChart data={measurementsData} />
-            </CardContent>
-          </Card>
-        </m.div>
-      )}
-
-      <m.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6"
-      >
-        <WeightChart days={30} />
-        <WeightChart days={90} />
-      </m.div>
-
-      {weights.length === 0 ? (
-        <EmptyState
-          title="No weight entries yet"
-          description="Start logging your weight to see your progress"
-          action={<Button onClick={openAdd}>Log Weight</Button>}
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "weight", label: "Weight", icon: <LineChart className="h-4 w-4" aria-hidden="true" /> },
+            { value: "measurements", label: "Measurements", icon: <RulerIcon className="h-4 w-4" aria-hidden="true" /> },
+            { value: "photos", label: "Photos", icon: <Camera className="h-4 w-4" aria-hidden="true" /> },
+          ]}
         />
-      ) : (
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.45 }}
-        >
-          <WeightHistory
-            entries={weights}
-            onEdit={openEdit}
-            onDelete={setDeleteId}
-          />
-        </m.div>
+      </m.div>
+
+      {tab === "weight" && (
+        <>
+          <ProgressSummary />
+
+          <m.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6"
+          >
+            {bmi != null && (
+              <StatCard
+                label="BMI"
+                value={bmi.toFixed(1)}
+                icon={<Scale />}
+                description={getBmiCategory(bmi)}
+                delay={0.1}
+              />
+            )}
+            {rateOfChange != null && (
+              <StatCard
+                label="Rate of Change"
+                value={`${rateOfChange.rate > 0 ? "+" : ""}${rateOfChange.rate.toFixed(2)} kg/week`}
+                icon={<TrendingUp />}
+                trend={rateOfChange.trend}
+                trendValue="last 30 days"
+                delay={0.15}
+              />
+            )}
+          </m.div>
+
+          {weights.length === 0 ? (
+            <EmptyState
+              icon={<Scale className="h-8 w-8 text-primary" aria-hidden="true" />}
+              title="No weight entries yet"
+              description="Log your weight to see charts, trends, and your history here."
+              action={
+                <Button variant="gradient" onClick={openAdd}>
+                  <Plus className="h-4 w-4 mr-1.5" /> Log Weight
+                </Button>
+              }
+            />
+          ) : (
+            <>
+              <m.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2 md:gap-6"
+              >
+                <WeightChart days={30} />
+                <WeightChart days={90} />
+              </m.div>
+
+              <m.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.25 }}
+              >
+                <WeightHistory
+                  entries={weights}
+                  onEdit={openEdit}
+                  onDelete={setDeleteId}
+                />
+              </m.div>
+            </>
+          )}
+        </>
       )}
+
+      {tab === "measurements" && (
+        <>
+          <m.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6"
+          >
+            {latestWeight?.waistCm != null && (
+              <StatCard
+                label="Waist"
+                value={`${latestWeight.waistCm.toFixed(1)} cm`}
+                icon={<Ruler />}
+                delay={0.1}
+              />
+            )}
+            {bodyFat != null && (
+              <StatCard
+                label="Body Fat"
+                value={`${bodyFat.toFixed(1)}%`}
+                icon={<Activity />}
+                description="Navy method"
+                delay={0.15}
+              />
+            )}
+          </m.div>
+
+          {measurementsData.length >= 2 ? (
+            <m.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
+              className="mb-6"
+            >
+              <Card variant="elevated" className="p-6">
+                <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Body Measurements
+                </p>
+                <MeasurementsChart data={measurementsData} />
+              </Card>
+            </m.div>
+          ) : (
+            <EmptyState
+              icon={<Ruler className="h-8 w-8 text-primary" aria-hidden="true" />}
+              title="Not enough measurement data"
+              description="Log waist, chest, arms, or thighs with your weight entries — two or more entries unlock the chart."
+            />
+          )}
+
+          {measurementEntries.length > 0 && (
+            <WeightHistory
+              entries={measurementEntries}
+              onEdit={openEdit}
+              onDelete={setDeleteId}
+            />
+          )}
+        </>
+      )}
+
+      {tab === "photos" && <PhotosTab />}
 
       <WeightForm
         open={formOpen}

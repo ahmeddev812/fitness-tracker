@@ -207,6 +207,37 @@ export function saveProfile(profile: UserProfile): boolean {
   return setStoredData(STORAGE_KEYS.profile, profile);
 }
 
+/**
+ * Profile completeness check that does NOT depend on `currentUserId` module
+ * state being set yet — AuthGuard/splash run before FitnessDataProvider's
+ * deferred `setStorageUserId`, so reading via `getProfile()` alone raced the
+ * migration and falsely bounced signed-in users to /onboarding.
+ * Checks the scoped key for `userId` (when known), the bare legacy key, and
+ * as a last resort any scoped profile key on this device.
+ */
+export function hasCompleteProfileForUser(userId?: string | null): boolean {
+  if (isServer()) return false;
+  try {
+    const isProfileShape = (raw: string | null): boolean => {
+      if (!raw) return false;
+      const parsed = safeParse<Partial<UserProfile>>(raw, {});
+      return Boolean(parsed.name && parsed.age);
+    };
+    if (userId && isProfileShape(localStorage.getItem(`${STORAGE_KEYS.profile}__${userId}`))) return true;
+    if (isProfileShape(localStorage.getItem(STORAGE_KEYS.profile))) return true;
+    if (!userId) {
+      const prefix = `${STORAGE_KEYS.profile}__`;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix) && isProfileShape(localStorage.getItem(key))) return true;
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // --- Settings ---
 
 const DEFAULT_SETTINGS: AppSettings = {

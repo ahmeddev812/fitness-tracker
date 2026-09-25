@@ -164,14 +164,14 @@ export function GlobalSearch() {
           setQuery("");
           setSelectedIndex(0);
         }}
-        className="group flex w-full max-w-full sm:w-auto items-center gap-2.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-sm text-muted-foreground shadow-soft transition-all hover:border-primary/30 hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
+        className="group flex min-h-10 items-center gap-2.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 text-sm text-muted-foreground shadow-soft transition-all hover:border-primary/30 hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]"
         aria-label="Open search (Ctrl+K)"
       >
         <Search
           className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
           aria-hidden="true"
         />
-        <span className="flex-1 text-left truncate">Search anything</span>
+        <span className="hidden flex-1 text-left truncate sm:inline">Search anything</span>
         <kbd
           className="hidden sm:inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
           aria-hidden="true"

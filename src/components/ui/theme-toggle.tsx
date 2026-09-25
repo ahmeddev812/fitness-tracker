@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { m } from "framer-motion";
@@ -29,11 +29,12 @@ interface ThemeToggleProps {
 export function ThemeToggle({ showLabels = false }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const mounted = useIsClient();
+  const instanceId = useId();
 
   if (!mounted) {
     return (
       <div
-        className={`h-8 rounded-lg glass animate-pulse ${showLabels ? "w-[140px]" : "w-[96px]"}`}
+        className={`h-11 rounded-xl glass animate-pulse ${showLabels ? "w-[148px]" : "w-[128px]"}`}
         aria-hidden="true"
       />
     );
@@ -47,7 +48,7 @@ export function ThemeToggle({ showLabels = false }: ThemeToggleProps) {
     <div
       role="radiogroup"
       aria-label="Theme"
-      className="relative flex h-8 shrink-0 items-center rounded-lg glass border border-border/60 p-0.5"
+      className="relative flex h-11 shrink-0 items-center rounded-xl glass border border-border/60 p-0.5"
     >
       {OPTIONS.map(({ value, label, Icon }) => {
         const selected = active === value;
@@ -61,14 +62,14 @@ export function ThemeToggle({ showLabels = false }: ThemeToggleProps) {
             title={label}
             onClick={() => setTheme(value)}
             className={[
-              "relative flex h-7 min-w-7 items-center justify-center gap-1 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "relative flex h-10 min-w-10 items-center justify-center gap-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               showLabels ? "px-2" : "px-1.5",
               selected ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
             ].join(" ")}
           >
             {selected && (
               <m.span
-                layoutId="theme-pill"
+                layoutId={`theme-pill-${instanceId}`}
                 className="absolute inset-0 rounded-md gradient-primary shadow-glow"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />

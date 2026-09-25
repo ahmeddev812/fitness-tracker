@@ -32,26 +32,23 @@ function StatCardImpl({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: "easeOut" }}
       className={[
-        "group relative rounded-2xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:border-primary/30 hover-lift hover:shadow-premium",
+        "group rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover-lift hover:border-primary/30",
         className,
       ].join(" ")}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1.5">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
+          <p className="text-3xl font-bold text-foreground tabular-nums leading-tight">{value}</p>
         </div>
         {icon && (
-          <div className="relative">
-            <div className="absolute inset-0 gradient-primary rounded-xl blur-md opacity-40 group-hover:opacity-60 transition-opacity" />
-            <div className="relative gradient-primary rounded-xl p-2 text-white">
-              {icon}
-            </div>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl gradient-primary text-white [&>svg]:h-5 [&>svg]:w-5">
+            {icon}
           </div>
         )}
       </div>
       {(description || trendValue) && (
-        <div className="mt-2 flex items-center gap-1.5">
+        <div className="mt-3 flex items-center gap-1.5">
           {trend === "up" && <TrendingUp className="h-3.5 w-3.5 text-success" aria-label="Trending up" />}
           {trend === "down" && <TrendingDown className="h-3.5 w-3.5 text-destructive" aria-label="Trending down" />}
           {trendValue && <span className="text-xs text-muted-foreground">{trendValue}</span>}

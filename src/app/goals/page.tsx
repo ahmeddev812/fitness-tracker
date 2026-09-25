@@ -10,8 +10,9 @@ import { GoalCard } from "@/components/goals/goal-card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, Trophy, Target } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
 import { todayKey } from "@/lib/dates";
 
@@ -59,6 +60,7 @@ export default function GoalsPage() {
   const { addGoal, updateGoal, deleteGoal, completeGoal, archiveGoal } = useFitnessActions();
   const { toast } = useToast();
 
+  const [tab, setTab] = useState("active");
   const [formOpen, setFormOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -144,11 +146,31 @@ export default function GoalsPage() {
     setTemplateInitial(null);
   };
 
+  const goalGrid = "grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6";
+
+  const templatesBlock = (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-foreground">Quick Start Templates</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {GOAL_TEMPLATES.map((template) => (
+          <button
+            key={template.id}
+            onClick={() => handleTemplateClick(template)}
+            className="flex items-center gap-2 rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover-lift hover:border-primary/30"
+          >
+            <Zap className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate text-sm font-medium">{template.title}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <PageHeader title="Goals" description="Set and track your fitness goals">
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-1.5" /> Add Goal
+        <Button variant="gradient" onClick={openAdd}>
+          <Plus className="h-4 w-4 mr-1.5" /> New Goal
         </Button>
       </PageHeader>
 
@@ -173,108 +195,112 @@ export default function GoalsPage() {
         )}
       </AnimatePresence>
 
-      {goals.length === 0 && archivedGoals.length === 0 ? (
-        <EmptyState
-          title="No goals set"
-          description="Create your first fitness goal to start tracking progress"
-          action={<Button onClick={openAdd}>Add Goal</Button>}
+      <div className="mb-6">
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "active", label: `Active (${activeGoals.length})`, icon: <Target className="h-4 w-4" aria-hidden="true" /> },
+            { value: "completed", label: `Completed (${completedGoals.length})`, icon: <Trophy className="h-4 w-4" aria-hidden="true" /> },
+          ]}
         />
-      ) : (
-        <div className="space-y-8">
-          {activeGoals.length === 0 && archivedGoals.length === 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Quick Start Templates</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {GOAL_TEMPLATES.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleTemplateClick(template)}
-                    className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors text-left"
-                  >
-                    <Zap className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-sm font-medium truncate">{template.title}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      </div>
 
-          {activeGoals.length > 0 && (
+      {tab === "active" && (
+        <div className="space-y-8">
+          {activeGoals.length > 0 ? (
             <m.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
+              className={goalGrid}
             >
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-                Active Goals ({activeGoals.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {activeGoals.map((g) => (
-                  <GoalCard
-                    key={g.id}
-                    goal={g}
-                    onEdit={openEdit}
-                    onDelete={setDeleteId}
-                    onComplete={(id) => {
-                      const goal = goals.find((gl) => gl.id === id);
-                      const progress = goal
-                        ? (() => {
-                            const latest = weights.length > 0
-                              ? [...weights].sort((a, b) => b.date.localeCompare(a.date))[0].weightKg
-                              : undefined;
-                            return getGoalProgress(goal, latest);
-                          })()
-                        : null;
-                      handleComplete(id);
-                      if (progress && progress.kind === "computed" && progress.percent >= 100) {
-                        setCelebratingId(id);
-                        setTimeout(() => setCelebratingId(null), 1500);
-                      }
-                    }}
-                    onArchive={handleArchive}
-                  />
-                ))}
-              </div>
+              {activeGoals.map((g) => (
+                <GoalCard
+                  key={g.id}
+                  goal={g}
+                  onEdit={openEdit}
+                  onDelete={setDeleteId}
+                  onComplete={(id) => {
+                    const goal = goals.find((gl) => gl.id === id);
+                    const progress = goal
+                      ? (() => {
+                          const latest = weights.length > 0
+                            ? [...weights].sort((a, b) => b.date.localeCompare(a.date))[0].weightKg
+                            : undefined;
+                          return getGoalProgress(goal, latest);
+                        })()
+                      : null;
+                    handleComplete(id);
+                    if (progress && progress.kind === "computed" && progress.percent >= 100) {
+                      setCelebratingId(id);
+                      setTimeout(() => setCelebratingId(null), 1500);
+                    }
+                  }}
+                  onArchive={handleArchive}
+                />
+              ))}
             </m.div>
+          ) : (
+            <EmptyState
+              icon={<Target className="h-8 w-8 text-primary" aria-hidden="true" />}
+              title="No active goals"
+              description="Pick a template below or create your own goal to start tracking."
+              action={
+                <Button onClick={openAdd}>
+                  <Plus className="h-4 w-4 mr-1.5" /> New Goal
+                </Button>
+              }
+            />
           )}
 
-          {completedGoals.length > 0 && (
+          {templatesBlock}
+        </div>
+      )}
+
+      {tab === "completed" && (
+        <div className="space-y-8">
+          {completedGoals.length > 0 ? (
             <m.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-              className="opacity-60"
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className={goalGrid}
             >
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-                Completed Goals ({completedGoals.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {completedGoals.map((g) => (
-                  <GoalCard
-                    key={g.id}
-                    goal={g}
-                    onEdit={openEdit}
-                    onDelete={setDeleteId}
-                    onComplete={handleComplete}
-                    onArchive={handleArchive}
-                    showCompletionDate
-                  />
-                ))}
-              </div>
+              {completedGoals.map((g) => (
+                <GoalCard
+                  key={g.id}
+                  goal={g}
+                  onEdit={openEdit}
+                  onDelete={setDeleteId}
+                  onComplete={handleComplete}
+                  onArchive={handleArchive}
+                  showCompletionDate
+                />
+              ))}
             </m.div>
+          ) : (
+            <EmptyState
+              icon={<Trophy className="h-8 w-8 text-muted-foreground" aria-hidden="true" />}
+              title="Nothing completed yet"
+              description="Finish an active goal and it will appear here."
+            />
           )}
 
           {archivedGoals.length > 0 && (
             <m.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
-              className="opacity-60"
+              transition={{ duration: 0.3, delay: 0.15 }}
+              className="space-y-4"
             >
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-                Archived Goals ({archivedGoals.length})
+              <h2 className="text-lg font-semibold text-foreground">
+                Archived
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  {archivedGoals.length}
+                </span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className={`${goalGrid} opacity-70`}>
                 {archivedGoals.map((g) => (
                   <GoalCard
                     key={g.id}
@@ -287,24 +313,6 @@ export default function GoalsPage() {
                 ))}
               </div>
             </m.div>
-          )}
-
-          {activeGoals.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Quick Start Templates</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {GOAL_TEMPLATES.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleTemplateClick(template)}
-                    className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors text-left"
-                  >
-                    <Zap className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-sm font-medium truncate">{template.title}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       )}

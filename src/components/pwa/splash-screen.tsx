@@ -16,13 +16,8 @@ function isStandalone(): boolean {
   );
 }
 
-function hasCompleteProfile(): boolean {
-  try {
-    const profile = storage.getProfile();
-    return Boolean(profile.name && profile.age);
-  } catch {
-    return false;
-  }
+function hasCompleteProfile(userId?: string | null): boolean {
+  return storage.hasCompleteProfileForUser(userId);
 }
 
 /** Auth entry pages — never bounce a user away from these. */
@@ -44,7 +39,7 @@ const HOLD_MS = 1200;
  */
 export function SplashScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
   const completedRef = useRef(false);
@@ -78,7 +73,7 @@ export function SplashScreen() {
         finish(isAuthEntryPage(here) ? undefined : "/login");
         return;
       }
-      if (!hasCompleteProfile()) {
+      if (!hasCompleteProfile(user?.id)) {
         finish("/onboarding");
         return;
       }
@@ -86,7 +81,7 @@ export function SplashScreen() {
     }, HOLD_MS);
 
     return () => window.clearTimeout(hold);
-  }, [visible, isLoading, isAuthenticated, router]);
+  }, [visible, isLoading, isAuthenticated, user?.id, router]);
 
   if (!visible) return null;
 

@@ -11,15 +11,6 @@ interface AuthGuardProps {
   requireProfile?: boolean;
 }
 
-function hasCompleteProfile(): boolean {
-  try {
-    const profile = storage.getProfile();
-    return Boolean(profile.name && profile.age);
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Client-side route guard:
  * - Not signed in (Clerk) → /login
@@ -40,7 +31,7 @@ export function AuthGuard({ children, requireProfile = true }: AuthGuardProps) {
         router.replace("/login");
         return;
       }
-      if (requireProfile && !hasCompleteProfile()) {
+      if (requireProfile && !storage.hasCompleteProfileForUser(user.id)) {
         router.replace("/onboarding");
         return;
       }
@@ -64,7 +55,7 @@ export function AuthGuard({ children, requireProfile = true }: AuthGuardProps) {
     );
   }
 
-  if (requireProfile && !hasCompleteProfile()) {
+  if (requireProfile && !storage.hasCompleteProfileForUser(user?.id)) {
     return (
       <div
         className="flex min-h-screen items-center justify-center bg-background"

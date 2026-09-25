@@ -71,7 +71,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         aria-live="polite"
         aria-label="Notifications"
-        className="fixed bottom-20 lg:bottom-6 right-4 z-[100] flex flex-col gap-2 w-full max-w-sm pointer-events-none"
+        className="fixed bottom-20 lg:bottom-6 inset-x-4 sm:left-auto sm:right-6 z-[100] flex flex-col gap-2 max-w-sm pointer-events-none"
       >
         {toasts.map((t) => {
           const Icon = icons[t.variant];

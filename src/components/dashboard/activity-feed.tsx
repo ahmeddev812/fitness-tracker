@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState } from "react";
 import { m } from "framer-motion";
 import { useFitnessData } from "@/hooks/useFitnessData";
 import {
@@ -12,6 +12,7 @@ import {
   Footprints,
 } from "lucide-react";
 import { formatDisplayDate } from "@/lib/dates";
+import { Button } from "@/components/ui/button";
 
 interface FeedItem {
   id: string;
@@ -40,6 +41,7 @@ function timeAgo(dateStr: string): string {
 
 function ActivityFeedImpl() {
   const { workouts, meals, water, weights, goals } = useFitnessData();
+  const [expanded, setExpanded] = useState(false);
 
   const feedItems = useMemo(() => {
     const items: FeedItem[] = [];
@@ -121,8 +123,8 @@ function ActivityFeedImpl() {
 
   if (feedItems.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
+      <div className="rounded-2xl border border-border bg-card p-6">
+        <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
         <div className="flex flex-col items-center py-8 text-center">
           <Footprints className="h-8 w-8 text-muted-foreground/40 mb-3" />
           <p className="text-sm text-muted-foreground">No activity yet</p>
@@ -134,11 +136,25 @@ function ActivityFeedImpl() {
     );
   }
 
+  const visibleItems = expanded ? feedItems : feedItems.slice(0, 5);
+
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold text-foreground">Recent Activity</h3>
+        {feedItems.length > 5 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+          >
+            {expanded ? "Show less" : `Show more (${feedItems.length - 5})`}
+          </Button>
+        )}
+      </div>
       <div className="space-y-1">
-        {feedItems.map((item, i) => (
+        {visibleItems.map((item, i) => (
           <m.div
             key={item.id}
             initial={{ opacity: 0, x: -8 }}
@@ -157,7 +173,7 @@ function ActivityFeedImpl() {
                 {item.value}
               </p>
             </div>
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+            <span className="whitespace-nowrap text-xs text-muted-foreground">
               {timeAgo(item.timestamp)}
             </span>
           </m.div>

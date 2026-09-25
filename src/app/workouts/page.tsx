@@ -139,7 +139,7 @@ export default function WorkoutsPage() {
   return (
     <div>
       <PageHeader title="Workouts" description="Log and track your workouts">
-        <Button onClick={() => { setEditWorkout(null); setFormOpen(true); }}>
+        <Button variant="gradient" onClick={() => { setEditWorkout(null); setFormOpen(true); }}>
           <Plus className="h-4 w-4 mr-1.5" /> Add Workout
         </Button>
       </PageHeader>
@@ -151,7 +151,7 @@ export default function WorkoutsPage() {
       >
         {workoutTemplates.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+            <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
               <Bookmark className="h-4 w-4" />
               Workout Templates
             </h3>
@@ -251,11 +251,12 @@ export default function WorkoutsPage() {
 
       {workouts.length === 0 ? (
         <EmptyState
-          title="No workouts recorded yet"
-          description="Start tracking your workouts to see your progress"
+          icon={<Dumbbell className="h-8 w-8 text-primary" aria-hidden="true" />}
+          title="No workouts yet"
+          description="Log your first workout and it will show up here."
           action={
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-1.5" /> Add Workout
+            <Button variant="gradient" size="lg" onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-1.5" /> Log your first workout
             </Button>
           }
         />

@@ -30,10 +30,10 @@ function EmptyStateImpl({
         className,
       ].join(" ")}
     >
-      <div className="relative mb-4">
+      <div className="relative mb-5">
         <div className="absolute inset-0 gradient-primary rounded-2xl blur-lg opacity-30" />
-        <div className="relative glass-strong rounded-2xl p-3.5">
-          {icon || <Inbox className="h-6 w-6 text-muted-foreground" aria-hidden="true" />}
+        <div className="relative glass-strong rounded-2xl p-4">
+          {icon || <Inbox className="h-8 w-8 text-muted-foreground" aria-hidden="true" />}
         </div>
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>

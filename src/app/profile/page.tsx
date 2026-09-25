@@ -8,11 +8,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { SettingsForm } from "@/components/profile/settings-form";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { LevelCard } from "@/components/dashboard/level-card";
 import { useToast } from "@/components/ui/toast";
 import { ProWaitlistModal } from "@/components/pricing/pro-waitlist-modal";
 import { m } from "framer-motion";
@@ -30,6 +32,8 @@ import {
   LogOut,
   Sparkles,
   Mail,
+  SlidersHorizontal,
+  AlertTriangle,
 } from "lucide-react";
 import { downloadBackup, importBackup } from "@/lib/backup";
 import { getStorageUsage, clearSpecificData } from "@/lib/storage";
@@ -191,251 +195,207 @@ export default function ProfilePage() {
         <m.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{ duration: 0.3 }}
+          className="grid gap-4 md:gap-6 lg:grid-cols-3"
         >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-4 mb-6">
-                <button
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="relative group"
-                >
-                  <UserAvatar
-                    src={profile.avatar}
-                    clerkUrl={user?.imageUrl}
-                    name={displayName}
-                    size="xl"
-                    className="border-2 border-border"
-                  />
-                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Upload className="h-5 w-5 text-white" />
-                  </div>
-                </button>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-foreground truncate">
-                    {displayName || "Your profile"}
-                  </h2>
-                  {user?.email && (
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 truncate">
-                      <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      {user.email}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Click avatar to upload a photo
-                  </p>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                  />
+          <Card className="p-6 lg:col-span-2">
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="group relative"
+              >
+                <UserAvatar
+                  src={profile.avatar}
+                  clerkUrl={user?.imageUrl}
+                  name={displayName}
+                  size="xl"
+                  className="border-2 border-border"
+                />
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Upload className="h-5 w-5 text-white" />
                 </div>
-              </div>
-
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Profile</h2>
-              <ProfileForm profile={profile} onSave={updateProfile} />
-            </CardContent>
-          </Card>
-        </m.div>
-
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-        >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" aria-hidden="true" />
-                  Your Plan
+              </button>
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-semibold text-foreground">
+                  {displayName || "Your profile"}
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void refreshPlan()}
-                  disabled={planLoading}
-                >
-                  Refresh
-                </Button>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-accent/30 mb-4">
-                <div className="h-10 w-10 rounded-lg gradient-primary flex items-center justify-center shrink-0 shadow-glow">
-                  <Sparkles className="h-5 w-5 text-white" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-foreground">
-                      {planLoading ? "Loading plan…" : planLabel}
-                    </p>
-                    <Badge variant={plan === "free" ? "secondary" : "gradient"}>
-                      {plan === "free" ? "Free" : "Pro"}
-                    </Badge>
-                    <Badge variant="warning" className="text-[10px]">
-                      Coming Soon
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Pro unlocks advanced charts, templates, and PDF reports —
-                    launching soon. No payment today.
+                {user?.email && (
+                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {user.email}
                   </p>
-                </div>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Click avatar to upload a photo
+                </p>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
+            </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant="gradient"
-                  onClick={handleUpgrade}
-                  className="sm:flex-1"
-                  aria-label="Join Pro waitlist"
-                >
-                  <Sparkles className="h-4 w-4 mr-1.5" />
-                  Join Pro Waitlist
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => void handleSignOut()}
-                  className="sm:flex-1"
-                >
-                  <LogOut className="h-4 w-4 mr-1.5" />
-                  Sign out
-                </Button>
-              </div>
-            </CardContent>
+            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {[
+                { label: "Member Since", value: stats.memberSince === "N/A" ? "N/A" : stats.memberSince, icon: <Calendar className="h-4 w-4" /> },
+                { label: "Workouts", value: stats.totalWorkouts, icon: <Dumbbell className="h-4 w-4" /> },
+                { label: "Meals", value: stats.totalMeals, icon: <UtensilsCrossed className="h-4 w-4" /> },
+                { label: "Water Entries", value: stats.totalWater, icon: <Droplets className="h-4 w-4" /> },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl bg-accent/40 p-3 text-center">
+                  <span className="mx-auto mb-1 flex justify-center text-primary">{s.icon}</span>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="mt-0.5 text-sm font-medium">{s.value}</p>
+                </div>
+              ))}
+            </div>
           </Card>
+
+          <LevelCard />
         </m.div>
 
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
+        <CollapsibleSection
+          title="Profile"
+          icon={<User className="h-4 w-4" aria-hidden="true" />}
+          defaultOpen
+          delay={0.05}
         >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Account Stats</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 rounded-lg bg-accent/50">
-                  <Calendar className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">Member Since</p>
-                  <p className="text-sm font-medium mt-0.5">
-                    {stats.memberSince === "N/A" ? "N/A" : stats.memberSince}
+          <ProfileForm profile={profile} onSave={updateProfile} />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Preferences"
+          icon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
+          delay={0.1}
+        >
+          <SettingsForm
+            settings={settings}
+            onSave={updateSettings}
+            onResetAll={resetAllData}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Account"
+          icon={<CreditCard className="h-4 w-4" aria-hidden="true" />}
+          delay={0.15}
+          action={
+            <Button
+              variant="ghost"
+              onClick={() => void refreshPlan()}
+              disabled={planLoading}
+            >
+              Refresh
+            </Button>
+          }
+        >
+          <div className="space-y-5">
+            <div className="mb-1 flex items-start gap-3 rounded-xl border border-border/60 bg-accent/30 p-4">
+              <div className="gradient-primary grid h-10 w-10 shrink-0 items-center justify-center rounded-lg shadow-glow">
+                <Sparkles className="h-5 w-5 text-white" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-foreground">
+                    {planLoading ? "Loading plan…" : planLabel}
                   </p>
+                  <Badge variant={plan === "free" ? "secondary" : "gradient"}>
+                    {plan === "free" ? "Free" : "Pro"}
+                  </Badge>
+                  <Badge variant="warning" className="text-[10px]">
+                    Coming Soon
+                  </Badge>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-accent/50">
-                  <Dumbbell className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">Workouts</p>
-                  <p className="text-sm font-medium mt-0.5">{stats.totalWorkouts}</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-accent/50">
-                  <UtensilsCrossed className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">Meals</p>
-                  <p className="text-sm font-medium mt-0.5">{stats.totalMeals}</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-accent/50">
-                  <Droplets className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs text-muted-foreground">Water Entries</p>
-                  <p className="text-sm font-medium mt-0.5">{stats.totalWater}</p>
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pro unlocks advanced charts, templates, and PDF reports —
+                  launching soon. No payment today.
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </m.div>
+            </div>
 
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Data Management</h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={downloadBackup} className="justify-start gap-2">
-                    <Download className="h-4 w-4" />
-                    Export Data
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => importInputRef.current?.click()}
-                    disabled={importing}
-                    className="justify-start gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {importing ? "Importing..." : "Import Data"}
-                  </Button>
-                  <input
-                    ref={importInputRef}
-                    type="file"
-                    accept=".json"
-                    onChange={handleImport}
-                    className="hidden"
-                  />
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                variant="gradient"
+                onClick={handleUpgrade}
+                className="sm:flex-1"
+                aria-label="Join Pro waitlist"
+              >
+                <Sparkles className="mr-1.5 h-4 w-4" />
+                Join Pro Waitlist
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => void handleSignOut()}
+                className="sm:flex-1"
+              >
+                <LogOut className="mr-1.5 h-4 w-4" />
+                Sign out
+              </Button>
+            </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <HardDrive className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Storage Usage</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {formatBytes(storageInfo.used)} / {formatBytes(storageInfo.total)}
-                    </span>
-                  </div>
-                  <ProgressBar value={storageInfo.percent} size="sm" variant="gradient" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </m.div>
-
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.25 }}
-        >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Settings</h2>
-              <SettingsForm
-                settings={settings}
-                onSave={updateSettings}
-                onResetAll={resetAllData}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Button variant="outline" onClick={downloadBackup} className="justify-start gap-2">
+                <Download className="h-4 w-4" />
+                Export Data
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                disabled={importing}
+                className="justify-start gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {importing ? "Importing..." : "Import Data"}
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
               />
-            </CardContent>
-          </Card>
-        </m.div>
+            </div>
 
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
-          <Card variant="elevated">
-            <CardContent className="p-5">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-destructive mb-4">Danger Zone</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Selectively clear specific data types. This action cannot be undone.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {clearOptions.map((option) => (
-                  <button
-                    key={option.type}
-                    onClick={() => setClearConfirm({ open: true, type: option.type, label: option.label })}
-                    className="flex items-center gap-2 p-3 rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/5 transition-colors text-left"
-                  >
-                    <Trash2 className="h-4 w-4 shrink-0" />
-                    <span className="text-sm">Clear {option.label}</span>
-                  </button>
-                ))}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Storage Usage</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {formatBytes(storageInfo.used)} / {formatBytes(storageInfo.total)}
+                </span>
               </div>
-            </CardContent>
-          </Card>
-        </m.div>
+              <ProgressBar value={storageInfo.percent} size="sm" variant="gradient" />
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Danger Zone"
+          icon={<AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+          danger
+          delay={0.2}
+        >
+          <p className="mb-4 text-sm text-muted-foreground">
+            Selectively clear specific data types. This action cannot be undone.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+            {clearOptions.map((option) => (
+              <button
+                key={option.type}
+                onClick={() => setClearConfirm({ open: true, type: option.type, label: option.label })}
+                className="flex items-center gap-2 rounded-xl border border-destructive/20 p-3 text-left text-destructive transition-colors hover:bg-destructive/5"
+              >
+                <Trash2 className="h-4 w-4 shrink-0" />
+                <span className="text-sm">Clear {option.label}</span>
+              </button>
+            ))}
+          </div>
+        </CollapsibleSection>
       </div>
 
       <ConfirmDialog

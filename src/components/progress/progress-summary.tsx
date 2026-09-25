@@ -2,7 +2,7 @@
 
 import { useFitnessData } from "@/hooks/useFitnessData";
 import { getWeightChange } from "@/lib/calculations";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Minus, Scale } from "lucide-react";
 import { m } from "framer-motion";
 
@@ -36,7 +36,7 @@ export function ProgressSummary() {
     {
       label: "Current",
       content: (
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <div className="gradient-primary rounded-lg p-1.5">
             <Scale className="h-3.5 w-3.5 text-white" />
           </div>
@@ -52,7 +52,7 @@ export function ProgressSummary() {
       content: (
         <div className="flex items-center gap-1.5">
           {trendIcon}
-          <span className="text-xs text-muted-foreground leading-tight">{trendLabel}</span>
+          <span className="text-xs text-muted-foreground leading-tight break-words">{trendLabel}</span>
         </div>
       ),
     },
@@ -63,19 +63,18 @@ export function ProgressSummary() {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3 mb-6">
+    <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">
       {cards.map((c, i) => (
         <m.div
           key={c.label}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: i * 0.05 }}
+          className={i === 2 ? "col-span-2 h-full sm:col-span-1" : "h-full"}
         >
-          <Card hover className="p-4">
-            <CardContent>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">{c.label}</p>
-              {c.content}
-            </CardContent>
+          <Card hover className="h-full p-4 sm:p-5 md:p-6">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">{c.label}</p>
+            {c.content}
           </Card>
         </m.div>
       ))}

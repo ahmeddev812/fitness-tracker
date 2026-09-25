@@ -127,32 +127,34 @@ export default function NutritionPage() {
   return (
     <div>
       <PageHeader title="Nutrition" description="Log meals and track macros">
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-1.5" /> Add Meal
-        </Button>
+        <div className="hidden sm:block">
+          <Button variant="gradient" onClick={openAdd}>
+            <Plus className="h-4 w-4 mr-1.5" /> Add Meal
+          </Button>
+        </div>
       </PageHeader>
 
       <m.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex items-center gap-2 mb-6"
+        className="mb-6 flex flex-wrap items-center gap-1.5"
       >
-        <Button size="sm" variant="ghost" onClick={handlePrev} aria-label="Previous day" className="rounded-xl">
+        <Button size="sm" variant="ghost" onClick={handlePrev} aria-label="Previous day">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className="text-sm font-medium text-foreground min-w-[160px] text-center">
+        <div className="min-w-[150px] px-1 text-center text-sm font-medium text-foreground">
           {formatDisplayDate(selectedDate)}
         </div>
-        <Button size="sm" variant="ghost" onClick={handleNext} aria-label="Next day" className="rounded-xl">
+        <Button size="sm" variant="ghost" onClick={handleNext} aria-label="Next day">
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="secondary" onClick={handleToday} className="rounded-xl">
+        <Button size="sm" variant="secondary" onClick={handleToday} className="ml-1">
           Today
         </Button>
         {hasYesterdayMeals && selectedDate === today && (
-          <Button size="sm" variant="outline" onClick={handleCopyYesterday} className="rounded-xl ml-2">
-            <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Yesterday&apos;s Meals
+          <Button size="sm" variant="outline" onClick={handleCopyYesterday} className="ml-2">
+            <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy yesterday
           </Button>
         )}
       </m.div>
@@ -173,14 +175,14 @@ export default function NutritionPage() {
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Macro Split</CardTitle>
+            <CardHeader>
+              <CardTitle>Macro Split</CardTitle>
             </CardHeader>
             <CardContent>
               {macroData.length > 0 ? (
                 <MacroSplitChart data={macroData} total={totalMacros} />
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-4">
+                <p className="py-4 text-center text-xs text-muted-foreground">
                   No macros logged yet
                 </p>
               )}
@@ -193,7 +195,7 @@ export default function NutritionPage() {
         <EmptyState
           title="No meals logged for this day"
           description="Add a meal to start tracking your nutrition"
-          action={<Button onClick={openAdd}>Add Meal</Button>}
+          action={<Button variant="secondary" onClick={openAdd}>Add Meal</Button>}
         />
       ) : (
         <MealList
@@ -203,6 +205,16 @@ export default function NutritionPage() {
           onSaveTemplate={handleSaveTemplate}
         />
       )}
+
+      {/* Mobile: floating log button */}
+      <button
+        type="button"
+        onClick={openAdd}
+        aria-label="Log meal"
+        className="fixed bottom-24 right-4 z-40 grid h-14 w-14 place-items-center rounded-full gradient-primary text-white shadow-glow transition-transform active:scale-95 sm:hidden"
+      >
+        <Plus className="h-6 w-6" aria-hidden="true" />
+      </button>
 
       <AnimatePresence>
         {mealTemplates.length > 0 && (
@@ -214,8 +226,8 @@ export default function NutritionPage() {
             className="mt-8"
           >
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Bookmark className="h-4 w-4" />
                   Meal Templates
                 </CardTitle>

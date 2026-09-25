@@ -70,7 +70,7 @@ export function MobileNav() {
                 {/* Label */}
                 <span
                   className={[
-                    "text-[10px] font-medium transition-colors",
+                    "text-sm font-medium whitespace-nowrap transition-colors",
                     active
                       ? "gradient-text"
                       : "text-muted-foreground",

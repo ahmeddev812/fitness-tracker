@@ -21,9 +21,9 @@ const MEAL_TYPES = [
 ];
 
 const ACTIONS = [
-  { key: "workout", label: "Add Workout", Icon: Dumbbell },
-  { key: "water", label: "Add Water", Icon: Droplets },
+  { key: "workout", label: "Log Workout", Icon: Dumbbell },
   { key: "meal", label: "Log Meal", Icon: Apple },
+  { key: "water", label: "Add Water", Icon: Droplets },
   { key: "weight", label: "Log Weight", Icon: Scale },
 ] as const;
 
@@ -111,7 +111,7 @@ function QuickActionsImpl() {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {ACTIONS.map(({ key, label, Icon }, i) => (
           <m.button
             key={key}
@@ -119,12 +119,14 @@ function QuickActionsImpl() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.05 }}
             onClick={() => setOpenModal(key)}
-            className="group flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover-lift hover:border-primary/30 hover:shadow-premium"
+            className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 glass-strong p-4 transition-all duration-300 hover-lift hover:border-primary/30"
           >
-            <div className="gradient-primary rounded-xl p-2.5 group-hover:shadow-glow transition-shadow">
-              <Icon className="h-5 w-5 text-white" aria-hidden="true" />
+            <div className="rounded-xl bg-primary/10 p-2.5 text-primary transition-colors group-hover:bg-primary/15">
+              <Icon className="h-5 w-5" aria-hidden="true" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
+            <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+              {label}
+            </span>
           </m.button>
         ))}
       </div>
