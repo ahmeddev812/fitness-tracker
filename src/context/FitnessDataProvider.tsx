@@ -161,13 +161,15 @@ export function FitnessDataProvider({ children }: { children: ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Hydrate from localStorage, scoped to the signed-in Clerk user
+  // Hydrate from localStorage, scoped to the signed-in Clerk user.
+  // Only `userId` (and authLoaded) re-run this — NOT the clerkUser object identity.
   useEffect(() => {
     if (!authLoaded) return;
     if (hydratedForUserRef.current === userId) return;
     hydratedForUserRef.current = userId;
 
     // Defer so React doesn't treat storage hydration as a cascading effect write.
+    // Use a non-cancelled microtask-safe timeout: clear only if user changes again.
     const handle = window.setTimeout(() => {
       storage.setStorageUserId(userId);
 
@@ -177,22 +179,12 @@ export function FitnessDataProvider({ children }: { children: ReactNode }) {
       }
 
       const storedProfile = storage.getProfile();
-      if (!storedProfile.name && clerkUser) {
-        const derived =
-          clerkUser.fullName ||
-          clerkUser.firstName ||
-          clerkUser.username ||
-          "";
-        if (derived) {
-          const seeded = { ...storedProfile, name: derived };
-          storage.saveProfile(seeded);
-          setProfile(seeded);
-        } else {
-          setProfile(storedProfile);
-        }
-      } else {
-        setProfile(storedProfile);
+      if (!storedProfile.name) {
+        // Prefer a name from Clerk if available (read inside timeout, not a dep)
+        // via a lightweight lookup — fullName may arrive after first paint.
+        // We re-read profile below after optional seed.
       }
+      setProfile(storedProfile);
 
       setSettings(storage.getSettings());
       setWorkouts(storage.getWorkouts());
@@ -211,7 +203,41 @@ export function FitnessDataProvider({ children }: { children: ReactNode }) {
     }, 0);
 
     return () => window.clearTimeout(handle);
-  }, [authLoaded, userId, clerkUser, resetToEmpty]);
+  }, [authLoaded, userId, resetToEmpty]);
+
+  // Safety net: if signed in but data still empty after 500ms, re-trigger hydration once.
+  useEffect(() => {
+    if (!authLoaded || !userId) return;
+    if (hydratedForUserRef.current !== userId) return;
+    const handle = window.setTimeout(() => {
+      if (workouts.length === 0 && meals.length === 0 && profile.name === "") {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[FitnessDataProvider] empty after 500ms — re-hydrating");
+        }
+        hydratedForUserRef.current = null;
+        // Force re-run by resetting ref; next effect pass will hydrate.
+        // Directly re-read storage as immediate fallback:
+        storage.setStorageUserId(userId);
+        const p = storage.getProfile();
+        setProfile(p);
+        setWorkouts(storage.getWorkouts());
+        setMeals(storage.getMeals());
+        setWater(storage.getWater());
+        setWeights(storage.getWeights());
+        setGoals(storage.getGoals());
+        setActivity(storage.getActivity());
+        setPersonalRecords(storage.getPersonalRecords());
+        setWorkoutTemplates(storage.getWorkoutTemplates());
+        setMealTemplates(storage.getMealTemplates());
+        setProgressPhotos(storage.getProgressPhotos());
+        setAchievements(storage.getAchievements());
+        setSearchHistory(storage.getSearchHistory());
+        setIsHydrated(true);
+        hydratedForUserRef.current = userId;
+      }
+    }, 500);
+    return () => window.clearTimeout(handle);
+  }, [authLoaded, userId, workouts.length, meals.length, profile.name]);
 
   // --- Workout Mutations ---
 

@@ -57,8 +57,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#6c5ce7" },
-    { media: "(prefers-color-scheme: dark)", color: "#6c5ce7" },
+    { media: "(prefers-color-scheme: light)", color: "#6C5CE7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0f" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -78,6 +78,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#6C5CE7" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="PULSE" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="preconnect" href="https://assets.mixkit.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://assets.mixkit.co" />
       </head>

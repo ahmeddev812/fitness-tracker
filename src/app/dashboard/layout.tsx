@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default async function ProtectedLayout({
   children,
@@ -6,5 +7,5 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   await auth.protect();
-  return <>{children}</>;
+  return <AuthGuard>{children}</AuthGuard>;
 }

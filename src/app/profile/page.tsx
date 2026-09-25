@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { ProWaitlistModal } from "@/components/pricing/pro-waitlist-modal";
 import { m } from "framer-motion";
 import {
   Download,
@@ -47,16 +48,11 @@ export default function ProfilePage() {
   const {
     plan,
     planLabel,
-    status,
-    currentPeriodEnd,
-    cancelAtPeriodEnd,
-    paymentMethods,
-    hasPaymentMethod,
     isLoading: planLoading,
-    openPortal,
     refresh: refreshPlan,
   } = useSubscription();
   const { toast } = useToast();
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   const [storageInfo, setStorageInfo] = useState(() => ({
     used: 0,
@@ -64,7 +60,6 @@ export default function ProfilePage() {
     percent: 0,
   }));
   const [importing, setImporting] = useState(false);
-  const [portalBusy, setPortalBusy] = useState(false);
   const [clearConfirm, setClearConfirm] = useState<{ open: boolean; type: string; label: string }>({
     open: false,
     type: "",
@@ -160,36 +155,8 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePortal = async () => {
-    setPortalBusy(true);
-    try {
-      await openPortal();
-    } catch (err) {
-      toast(err instanceof Error ? err.message : "Could not open billing", "error");
-    } finally {
-      setPortalBusy(false);
-    }
-  };
-
-  const handleUpgrade = async () => {
-    setPortalBusy(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "pro", interval: "monthly" }),
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        toast(data.error || "Could not start checkout", "error");
-        return;
-      }
-      window.location.assign(data.url);
-    } catch {
-      toast("Could not start checkout", "error");
-    } finally {
-      setPortalBusy(false);
-    }
+  const handleUpgrade = () => {
+    setWaitlistOpen(true);
   };
 
   const handleSignOut = async () => {
@@ -204,15 +171,6 @@ export default function ProfilePage() {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const formatPeriodEnd = (iso: string | null): string => {
-    if (!iso) return "";
-    return new Date(iso).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
   };
 
   const clearOptions: Array<{ type: string; label: string; icon: React.ReactNode }> = [
@@ -292,7 +250,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                 <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <CreditCard className="h-4 w-4" aria-hidden="true" />
-                  Billing &amp; Payment
+                  Your Plan
                 </h2>
                 <Button
                   variant="ghost"
@@ -313,77 +271,30 @@ export default function ProfilePage() {
                     <p className="font-semibold text-foreground">
                       {planLoading ? "Loading plan…" : planLabel}
                     </p>
-                    {plan !== "free" && (
-                      <Badge variant="gradient">{status || "active"}</Badge>
-                    )}
+                    <Badge variant={plan === "free" ? "secondary" : "gradient"}>
+                      {plan === "free" ? "Free" : "Pro"}
+                    </Badge>
+                    <Badge variant="warning" className="text-[10px]">
+                      Coming Soon
+                    </Badge>
                   </div>
-                  {plan !== "free" && currentPeriodEnd && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
-                      {formatPeriodEnd(currentPeriodEnd)}
-                    </p>
-                  )}
-                  {plan === "free" && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Upgrade to Pro for advanced insights and priority support.
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Pro unlocks advanced charts, templates, and PDF reports —
+                    launching soon. No payment today.
+                  </p>
                 </div>
               </div>
 
-              <div className="mb-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                  Payment methods
-                </p>
-                {paymentMethods.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {hasPaymentMethod
-                      ? "No saved cards."
-                      : "No saved cards yet. Add one in the Stripe billing portal after upgrading."}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {paymentMethods.map((pm) => (
-                      <li
-                        key={pm.id}
-                        className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border/60 bg-card text-sm"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                          <span className="uppercase font-medium">{pm.brand}</span>
-                          <span className="text-muted-foreground">•••• {pm.last4}</span>
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Exp {pm.expMonth}/{pm.expYear}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
               <div className="flex flex-col sm:flex-row gap-3">
-                {plan === "free" ? (
-                  <Button
-                    variant="gradient"
-                    onClick={() => void handleUpgrade()}
-                    loading={portalBusy}
-                    className="sm:flex-1"
-                  >
-                    <Sparkles className="h-4 w-4 mr-1.5" />
-                    Upgrade to Pro
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => void handlePortal()}
-                    loading={portalBusy}
-                    className="sm:flex-1"
-                  >
-                    <CreditCard className="h-4 w-4 mr-1.5" />
-                    Manage payment methods
-                  </Button>
-                )}
+                <Button
+                  variant="gradient"
+                  onClick={handleUpgrade}
+                  className="sm:flex-1"
+                  aria-label="Join Pro waitlist"
+                >
+                  <Sparkles className="h-4 w-4 mr-1.5" />
+                  Join Pro Waitlist
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => void handleSignOut()}
@@ -536,6 +447,8 @@ export default function ProfilePage() {
         confirmLabel="Clear"
         variant="destructive"
       />
+
+      <ProWaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
     </div>
   );
 }

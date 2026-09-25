@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { generateDemoData } from "@/lib/seed";
 import { PulseLogo } from "@/components/brand/pulse-logo";
+import { PlanStep } from "@/components/onboarding/plan-step";
 import {
   User,
   Activity,
@@ -22,6 +23,7 @@ import {
   Dumbbell,
   Apple,
   Droplets,
+  CreditCard,
 } from "lucide-react";
 import type { ActivityLevel } from "@/types/fitness";
 import * as storage from "@/lib/storage";
@@ -31,6 +33,7 @@ const STEPS = [
   { icon: Activity, label: "Body Stats" },
   { icon: Target, label: "Goals" },
   { icon: Settings, label: "Preferences" },
+  { icon: CreditCard, label: "Plan" },
 ];
 
 const ACTIVITY_LEVELS = [
@@ -79,10 +82,21 @@ export default function OnboardingPage() {
   const [proteinTarget, setProteinTarget] = useState("140");
   const [waterTarget, setWaterTarget] = useState("2500");
 
-  const next = () => setStep((s) => Math.min(s + 1, 3));
+  // Step 5: Plan (marketing only — free | pro)
+  const [planChoice, setPlanChoice] = useState<"free" | "pro">("free");
+
+  const MAX_STEP = STEPS.length - 1;
+  const next = () => setStep((s) => Math.min(s + 1, MAX_STEP));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleComplete = () => {
+    // Save plan preference (local, marketing only)
+    try {
+      window.localStorage.setItem("fitness_plan", planChoice);
+    } catch {
+      // ignore
+    }
+
     // Save profile
     actions.updateProfile({
       name: name.trim() || user?.name || "User",
@@ -432,6 +446,20 @@ export default function OnboardingPage() {
                     />
                   </m.div>
                 )}
+
+                {step === 4 && (
+                  <m.div
+                    key="step4"
+                    custom={1}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.3 }}
+                  >
+                    <PlanStep selected={planChoice} onSelect={setPlanChoice} />
+                  </m.div>
+                )}
               </AnimatePresence>
             </div>
 
@@ -445,7 +473,7 @@ export default function OnboardingPage() {
               ) : (
                 <div />
               )}
-              {step < 3 ? (
+              {step < MAX_STEP ? (
                 <Button variant="gradient" onClick={next}>
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />

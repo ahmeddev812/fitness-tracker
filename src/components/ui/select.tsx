@@ -32,9 +32,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           aria-invalid={!!error || undefined}
           aria-describedby={[errorId, hintId].filter(Boolean).join(" ") || undefined}
           className={[
-            "flex h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm",
+            "text-foreground bg-card",
+            "flex h-10 w-full rounded-lg border px-3 py-2 text-sm",
             "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-50",
+            "[&>option]:bg-card [&>option]:text-card-foreground",
+            "[&>optgroup]:bg-card [&>optgroup]:text-card-foreground",
+            "[&>option:checked]:bg-primary [&>option:checked]:text-primary-foreground",
             error
               ? "border-destructive focus:ring-destructive"
               : "border-input",

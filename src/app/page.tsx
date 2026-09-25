@@ -8,9 +8,12 @@ import {
   PricingSection,
   FaqSection,
   CtaSection,
+  DownloadSection,
   Footer,
 } from "@/components/landing/lazy-sections";
 import { CursorGlow } from "@/components/landing/cursor-glow";
+import { AppRedirect } from "@/components/pwa/app-redirect";
+import { IosInstallModal } from "@/components/landing/ios-install-modal";
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -31,6 +34,8 @@ const JSON_LD = {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <AppRedirect />
+      <IosInstallModal />
       <link
         rel="preload"
         as="image"
@@ -45,6 +50,7 @@ export default function Home() {
       <CursorGlow />
       <main>
         <HeroSection />
+        <DownloadSection />
         <WorkoutSimulatorSection />
         <FeaturesSection />
         <TimelineSection />

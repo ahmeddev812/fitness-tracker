@@ -6,6 +6,7 @@ import { LazyMotion, MotionConfig, domMax } from "framer-motion";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import { ToastProvider } from "@/components/ui/toast";
+import { SplashScreen } from "@/components/pwa/splash-screen";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +20,10 @@ export function Providers({ children }: { children: ReactNode }) {
         <LazyMotion features={domMax}>
           <MotionConfig reducedMotion="user">
             <SubscriptionProvider>
-              <ToastProvider>{children}</ToastProvider>
+              <ToastProvider>
+                <SplashScreen />
+                {children}
+              </ToastProvider>
             </SubscriptionProvider>
           </MotionConfig>
         </LazyMotion>

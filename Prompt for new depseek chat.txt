@@ -1,0 +1,302 @@
+Bhai, ye mera project ka pura context hai. Padh ke ready ho jao. 
+Aage hum isi pe kaam karenge.
+
+═══════════════════════════════════════════════
+PROJECT: PULSE — Fitness Tracker PWA
+═══════════════════════════════════════════════
+
+NAAM: PULSE
+TAGLINE: "Every beat counts."
+TYPE: Fitness tracking app (PWA)
+LIVE URL: https://fitness-tracker-wheat-eta.vercel.app/
+LOCAL PATH: D:\Projects\fitness-tracker
+
+═══════════════════════════════════════════════
+TECH STACK
+═══════════════════════════════════════════════
+
+- Next.js 16.3.5 (App Router)
+- React 19.2.8
+- TypeScript 5 (strict mode)
+- Tailwind CSS v4 (@theme in globals.css, NOT JS config)
+- framer-motion (animations)
+- next-themes (dark/light toggle)
+- recharts 3.10 (charts)
+- lucide-react 1.47 (icons)
+- localStorage ONLY (no backend, no auth server, no database)
+- Deployed on Vercel
+
+═══════════════════════════════════════════════
+BRANDING
+═══════════════════════════════════════════════
+
+- Logo: Heart-rate waveform (ECG) + gradient (primary → accent) 
+  + pulsing dot at peak
+- Colors (oklch):
+  - primary: oklch(0.62 0.19 265) — indigo-blue
+  - accent: oklch(0.68 0.18 300) — violet
+  - destructive, success, warning, info tokens bhi hain
+- Fonts: Geist Sans + Geist Mono
+- Theme: light + dark (system preference default)
+- Design language: glass morphism, gradient-primary, shadow-glow,
+  rounded-2xl cards, hover-lift
+
+═══════════════════════════════════════════════
+PROJECT STRUCTURE
+═══════════════════════════════════════════════
+
+src/
+├── app/                    # Next.js App Router
+│   ├── page.tsx            # Landing page
+│   ├── layout.tsx          # Root layout
+│   ├── providers.tsx       # ThemeProvider + FitnessDataProvider + ToastProvider
+│   ├── globals.css         # @theme tokens, glass utilities, animations
+│   ├── login/, signup/     # Auth pages
+│   ├── onboarding/         # 4-step wizard
+│   ├── dashboard/          # Main dashboard
+│   ├── workouts/           # Workout tracking
+│   ├── nutrition/          # Meal logging
+│   ├── water/              # Hydration
+│   ├── progress/           # Weight & measurements
+│   ├── goals/              # Goal management
+│   ├── analytics/          # Deep insights
+│   ├── search/             # Global search (⌘K)
+│   ├── profile/            # Profile & settings
+│   └── error.tsx, not-found.tsx
+│
+├── components/
+│   ├── ui/                 # 17 primitives (Button, Card, Modal, 
+│   │                       # Input, Select, Badge, StatCard, 
+│   │                       # ProgressBar, CircularProgress, 
+│   │                       # EmptyState, Skeleton, Toast, etc.)
+│   ├── layout/             # Sidebar, TopBar, MobileNav, AppShell, 
+│   │                       # PageHeader
+│   ├── landing/            # Landing page sections
+│   ├── dashboard/          # Dashboard widgets
+│   ├── workouts/, nutrition/, progress/, goals/, profile/
+│   ├── brand/              # PULSE logo, icon (if created)
+│   └── auth/               # Auth guard
+│
+├── context/
+│   ├── FitnessDataProvider.tsx   # Split data/actions contexts
+│   └── AuthContext.tsx           # Fake localStorage auth
+│
+├── hooks/
+│   ├── useFitnessData.ts   # useFitnessData + useFitnessActions
+│   ├── useAuth.ts
+│   └── useDelayedLoad.ts
+│
+├── lib/
+│   ├── storage.ts          # localStorage wrappers (SSR-guarded)
+│   ├── calculations.ts     # All formulas
+│   ├── dates.ts            # Date utils (toDateKey, todayKey, 
+│   │                       # addDays, subtractDays, getLastNDays)
+│   ├── id.ts               # generateId
+│   ├── seed.ts             # 30-day demo data generator
+│   └── auth.ts             # Local auth helpers
+│
+├── data/
+│   └── exercises.ts        # 30 exercises
+│
+└── types/
+    └── fitness.ts          # All TypeScript interfaces
+
+═══════════════════════════════════════════════
+DATA MODEL (localStorage)
+═══════════════════════════════════════════════
+
+Keys:
+- fitness_users              # Array of {email, name, passwordHash, createdAt}
+- fitness_current_user       # Current logged-in user
+- fitness_remember_me        # "1" if remember me checked
+- fitness_plan               # "free" | "pro"
+- fitness_profile            # UserProfile (name, age, height, weight, etc.)
+- fitness_settings           # AppSettings (units, theme, targets)
+- fitness_workouts           # Workout[]
+- fitness_meals              # MealEntry[]
+- fitness_water              # WaterEntry[]
+- fitness_weights            # WeightEntry[]
+- fitness_goals              # Goal[]
+- fitness_activities         # ActivityEntry[]
+- pulse_pro_waitlist         # Array of waitlist emails
+- pulse_install_dismissed    # Timestamp (install banner)
+- pulse_splash_shown         # Session splash shown
+
+═══════════════════════════════════════════════
+FEATURES (Already Built)
+═══════════════════════════════════════════════
+
+LANDING PAGE:
+- Video hero with "Every beat counts."
+- Live workout simulator (real-time timer, reps, heart rate)
+- Bento features grid (6 features)
+- Transformation timeline (Day 1 → Day 365)
+- Testimonials carousel
+- Pricing (Free + Pro + Lifetime)
+- FAQ accordion
+- CTA section
+- Footer
+
+AUTH:
+- Login/Signup (split layout, localStorage-based fake auth)
+- Password strength meter
+- Demo user option (30-day seed data)
+- Remember me checkbox (DEFAULT UNCHECKED)
+
+ONBOARDING (4 steps):
+1. Welcome (name, age, gender)
+2. Body stats (height, weight, target, activity level)
+3. Goals (primary goal, target date, weekly frequency)
+4. Preferences (units, targets, reminders)
+
+DASHBOARD:
+- Time-based greeting ("Good morning, [Name]")
+- Streak counter
+- Level & XP system
+- Activity feed (last 10 activities)
+- StatCards with animated counters
+- Weekly chart (recharts)
+- Quick actions
+
+WORKOUTS:
+- Full CRUD with filters (date range, muscle group, text)
+- Exercise search with autocomplete
+- Rest timer
+- 1RM calculator (Epley)
+- Duplicate workout
+- PR detection
+- Workout templates
+
+NUTRITION:
+- Full CRUD, meal types (breakfast/lunch/dinner/snack)
+- Daily macro summary
+- Meal templates
+- Recent meals quick-add
+- Macro split pie chart
+- Copy yesterday's meals
+
+WATER:
+- Full CRUD
+- Quick-add buttons (+250ml, +500ml, +1L)
+- Circular progress
+- Weekly bar chart
+- Time-of-day breakdown
+
+PROGRESS:
+- Weight tracking (30d/90d views)
+- Body measurements
+- BMI calculator
+- Body fat estimate
+- Weight chart with target line
+
+GOALS:
+- 5 goal types
+- Milestones (25%, 50%, 75%, 100%)
+- Auto progress calculation
+- Archive
+
+ANALYTICS:
+- Date range picker
+- Calories in vs out
+- Macro trends
+- Workout frequency heatmap
+- Most trained muscle groups
+- PR timeline
+
+SEARCH:
+- Global ⌘K / Ctrl+K command palette
+- Search across all data
+
+PROFILE:
+- Profile form
+- Settings (units, theme, reminders)
+- Achievement badges
+- Data export/import (JSON)
+- Storage usage indicator
+- Danger zone (reset data)
+
+═══════════════════════════════════════════════
+RECENT WORK COMPLETED
+═══════════════════════════════════════════════
+
+1. ✅ Premium UI (Batch 1-4):
+   - globals.css with dual theme tokens, glass utilities, gradients
+   - All layout components (sidebar, topbar, mobile nav, app shell)
+   - All UI primitives (card, button, badge, stat-card, progress, etc.)
+   - Dashboard components
+   - Feature pages
+
+2. ✅ Landing page + Auth + Onboarding:
+   - Full premium landing page
+   - Login/signup with app-like design
+   - 4-step onboarding wizard
+   - Fake localStorage auth
+
+3. ✅ PULSE rebrand:
+   - Heart-rate waveform logo
+   - Gradient branding
+   - New metadata
+
+═══════════════════════════════════════════════
+CURRENT WORK IN PROGRESS (Final Prompt Given)
+═══════════════════════════════════════════════
+
+I just gave a FINAL PROMPT to my CLI (opencode / Cursor / etc.) 
+to make these changes. The CLI is working on it:
+
+1. PWA manifest.json (start_url = /login)
+2. App icons (192, 512, maskable-512)
+3. Landing "Download App" section
+4. iOS install instructions modal
+5. App detection + auto-redirect (skip landing in installed app)
+6. Splash screen (1.5s, only in installed app)
+7. "Remember me" checkbox (DEFAULT UNCHECKED)
+8. Plan selection step after onboarding (Free / Pro Coming Soon)
+9. Pro Waitlist modal (email capture, no payment)
+10. Profile plan badge ("You're on Free plan" + upgrade CTA)
+11. Landing pricing update (Coming Soon badges)
+
+NEXT STEPS AFTER CLI FINISHES:
+- Test deployed version on phone (Android Chrome + iOS Safari)
+- Verify install prompt works
+- Verify flow: Splash → Login → Onboarding → Plan → Dashboard
+- Verify Remember me behavior
+- Performance optimization (if needed)
+
+═══════════════════════════════════════════════
+IMPORTANT RULES
+═══════════════════════════════════════════════
+
+1. NO Stripe, NO payment processing (Pro is marketing only)
+2. NO new npm packages
+3. localStorage ONLY (no backend)
+4. Reuse existing components and theme tokens
+5. framer-motion for animations
+6. TypeScript strict, no `any`
+7. Build must pass (npm run build)
+8. Don't break existing functionality
+9. User is Pakistan-based (Hinglish/Urdu/English mix)
+10. User is learning, explain simply when needed
+11. Provide CLI prompts when asked (for opencode/Cursor)
+
+═══════════════════════════════════════════════
+USER STYLE
+═══════════════════════════════════════════════
+
+- User's name: (bhai / no name given)
+- Language: Hinglish (Hindi + English mix) + Urdu
+- Communication style: casual, friendly, direct
+- Prefers: CLI prompts (paste-ready) over manual code edits
+- Wants: premium, dynamic, app-like results
+- Dislikes: static, boring, generic
+
+═══════════════════════════════════════════════
+WHAT I NEED FROM YOU (New AI)
+═══════════════════════════════════════════════
+
+1. Confirm you've read and understood this context
+2. Ask me what I want to do next
+3. Continue from where the previous chat left off
+4. Don't ask me to re-explain everything
+
+Ready? Bolo "samajh gaya" aur pucho kya karna hai.

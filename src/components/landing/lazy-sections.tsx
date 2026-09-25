@@ -42,6 +42,11 @@ export const CtaSection = dynamic(
   { loading },
 );
 
+export const DownloadSection = dynamic(
+  () => import("./download-section").then((mod) => mod.DownloadSection),
+  { loading },
+);
+
 export const Footer = dynamic(
   () => import("./footer").then((mod) => mod.Footer),
   { loading },

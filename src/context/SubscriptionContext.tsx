@@ -17,6 +17,7 @@ interface SubscriptionContextValue extends SubscriptionStatus {
   error: string | null;
   refresh: () => Promise<void>;
   openPortal: () => Promise<void>;
+  setLocalPlan: (plan: "free" | "pro") => void;
 }
 
 const FREE: SubscriptionStatus = {
@@ -31,75 +32,91 @@ const FREE: SubscriptionStatus = {
   hasPaymentMethod: false,
 };
 
+const PLAN_KEY = "fitness_plan";
+
+function readLocalPlan(): "free" | "pro" {
+  if (typeof window === "undefined") return "free";
+  try {
+    return window.localStorage.getItem(PLAN_KEY) === "pro" ? "pro" : "free";
+  } catch {
+    return "free";
+  }
+}
+
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
+/**
+ * Plan state is purely local marketing metadata (fitness_plan = free | pro).
+ * No Stripe / payment integration in this flow.
+ */
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [status, setStatus] = useState<SubscriptionStatus>(FREE);
+  const [localPlan, setLocalPlanState] = useState<"free" | "pro">("free");
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated) {
-      setStatus(FREE);
+      setLocalPlanState("free");
       setIsLoading(false);
-      setError(null);
       return;
     }
     setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/stripe/status");
-      const data = (await res.json()) as SubscriptionStatus & { error?: string };
-      if (!res.ok) {
-        setError(data.error || "Could not load plan");
-        setStatus(FREE);
-      } else {
-        setStatus(data);
-      }
-    } catch {
-      setError("Could not load plan");
-      setStatus(FREE);
-    } finally {
+    const handle = window.setTimeout(() => {
+      setLocalPlanState(readLocalPlan());
       setIsLoading(false);
-    }
+    }, 0);
+    return () => window.clearTimeout(handle);
   }, [isAuthenticated]);
 
   useEffect(() => {
     if (authLoading) return;
     const handle = window.setTimeout(() => {
-      void refresh();
+      setLocalPlanState(readLocalPlan());
+      setIsLoading(false);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [authLoading, refresh]);
+  }, [authLoading, isAuthenticated]);
 
-  const openPortal = useCallback(async () => {
+  const setLocalPlan = useCallback((plan: "free" | "pro") => {
+    setLocalPlanState(plan);
     try {
-      const res = await fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || "Could not open billing portal");
-      }
-      window.location.assign(data.url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not open billing portal");
-      throw err;
+      window.localStorage.setItem(PLAN_KEY, plan);
+    } catch {
+      // ignore
     }
   }, []);
+
+  const openPortal = useCallback(async () => {
+    // No payment provider — Pro is marketing only
+    throw new Error("Billing is not available yet. Pro is coming soon.");
+  }, []);
+
+  const status = useMemo<SubscriptionStatus>(() => {
+    if (localPlan === "pro") {
+      return {
+        ...FREE,
+        plan: "pro_monthly",
+        planLabel: "Pro",
+        isActive: true,
+        status: "active",
+      };
+    }
+    return FREE;
+  }, [localPlan]);
 
   const value = useMemo<SubscriptionContextValue>(
     () => ({
       ...status,
       isLoading: authLoading || isLoading,
       error,
-      refresh,
+      refresh: async () => {
+        await refresh();
+      },
       openPortal,
+      setLocalPlan,
     }),
-    [status, authLoading, isLoading, error, refresh, openPortal]
+    [status, authLoading, isLoading, error, refresh, openPortal, setLocalPlan]
   );
 
   return (

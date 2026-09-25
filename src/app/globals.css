@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Dark variant follows the WEBSITE theme (.dark class from next-themes),
+   not the OS preference — so system dark + website light stays light. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    THEME TOKENS — Light + Dark (next-themes compatible)
    ============================================ */
@@ -92,12 +96,98 @@
   }
 
   html {
-    color-scheme: light;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ============================================
+     COLOR-SCHEME — Force website theme (not system)
+     ============================================ */
+
+  html:not(.dark) {
+    color-scheme: light;
   }
 
   html.dark {
     color-scheme: dark;
+  }
+
+  /* ============================================
+     NATIVE FORM CONTROLS — Force theme matching
+     Chrome's native <select> dropdown is OS-rendered and
+     CSS control is LIMITED — color-scheme + explicit
+     background/color on option/optgroup is the reliable
+     fix without a custom dropdown component.
+     ============================================ */
+
+  /* Light mode — light bg, dark text */
+  html:not(.dark) input,
+  html:not(.dark) textarea,
+  html:not(.dark) select {
+    background-color: var(--color-card);
+    color: var(--color-card-foreground);
+    color-scheme: light;
+  }
+
+  html:not(.dark) select option,
+  html:not(.dark) select optgroup {
+    background-color: var(--color-card);
+    color: var(--color-card-foreground);
+  }
+
+  /* Dark mode — dark bg, light text */
+  html.dark input,
+  html.dark textarea,
+  html.dark select {
+    background-color: var(--color-card);
+    color: var(--color-card-foreground);
+    color-scheme: dark;
+  }
+
+  html.dark select option,
+  html.dark select optgroup {
+    background-color: var(--color-card);
+    color: var(--color-card-foreground);
+  }
+
+  /* Fallback for browsers that don't support :not() */
+  select,
+  select option,
+  select optgroup {
+    background-color: var(--color-card);
+    color: var(--color-card-foreground);
+  }
+
+  /* ============================================
+     DATE PICKER ICON
+     ============================================ */
+
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+  html.dark input[type="time"]::-webkit-calendar-picker-indicator,
+  html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  html.dark input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+  }
+
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  html.dark input[type="time"]::-webkit-calendar-picker-indicator:hover,
+  html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
+  /* ============================================
+     AUTOFILL FIX — Dark mode
+     ============================================ */
+
+  html.dark input:-webkit-autofill,
+  html.dark input:-webkit-autofill:hover,
+  html.dark input:-webkit-autofill:focus,
+  html.dark textarea:-webkit-autofill,
+  html.dark select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-foreground);
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-card) inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   body {

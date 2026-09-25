@@ -10,6 +10,7 @@ import { useConfettiBurst } from "@/hooks/useConfetti";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/toast";
 import { useSubscription } from "@/context/SubscriptionContext";
+import { ProWaitlistModal } from "@/components/pricing/pro-waitlist-modal";
 
 type Interval = "monthly" | "yearly";
 
@@ -22,6 +23,7 @@ const PLANS = [
     period: "forever",
     cta: "Start free",
     featured: false,
+    comingSoon: false,
     features: [
       "Unlimited workout logging",
       "30+ exercise library",
@@ -37,8 +39,9 @@ const PLANS = [
     monthly: 299,
     yearly: 1999,
     period: "month",
-    cta: "Go Pro",
+    cta: "Join waitlist",
     featured: true,
+    comingSoon: true,
     features: [
       "Everything in Free",
       "Advanced progress charts",
@@ -54,8 +57,9 @@ const PLANS = [
     monthly: null,
     yearly: 4999,
     period: "one-time",
-    cta: "Buy lifetime",
+    cta: "Join waitlist",
     featured: false,
+    comingSoon: true,
     features: [
       "Everything in Pro",
       "One-time payment",
@@ -71,91 +75,35 @@ const formatPrice = (n: number) => (n === 0 ? "₹0" : `₹${n.toLocaleString("e
 
 export function PricingSection() {
   const [interval, setInterval] = useState<Interval>("monthly");
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const { fireConfetti, confetti } = useConfettiBurst();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const { plan, planLabel, openPortal } = useSubscription();
+  const { plan } = useSubscription();
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
 
-  const handleCta = async (
-    planName: string,
-    isFree: boolean,
-    isLifetime: boolean
-  ) => {
+  const handleCta = (planName: string, isFree: boolean) => {
     if (isFree) {
       fireConfetti();
       router.push(isAuthenticated ? "/dashboard" : "/signup");
       return;
     }
-
-    if (!isAuthenticated) {
-      toast("Sign up first to upgrade", "info");
-      router.push("/signup");
-      return;
-    }
-
-    // Already on this plan (or lifetime covers Pro) — open Stripe Customer Portal
-    const ownsPro = plan === "pro_monthly" || plan === "pro_yearly" || plan === "lifetime";
-    if (isLifetime && plan === "lifetime") {
-      try {
-        await openPortal();
-      } catch {
-        toast("Could not open billing portal", "error");
-      }
-      return;
-    }
-    if (!isLifetime && ownsPro && plan === (interval === "yearly" ? "pro_yearly" : "pro_monthly")) {
-      toast(`You're already on ${planLabel}`, "info");
-      try {
-        await openPortal();
-      } catch {
-        // portal optional
-      }
-      return;
-    }
-
-    setLoadingPlan(planName);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: isLifetime ? "lifetime" : "pro",
-          interval: isLifetime ? undefined : interval,
-        }),
-      });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
-        toast(data.error || "Could not start checkout", "error");
-        return;
-      }
-      window.location.assign(data.url);
-    } catch {
-      toast("Could not start checkout", "error");
-    } finally {
-      setLoadingPlan(null);
-    }
+    // Pro / Lifetime — marketing only, no payment
+    setWaitlistOpen(true);
   };
 
   const ctaLabel = (planName: string, defaultLabel: string): string => {
     if (planName === "Free") return plan === "free" ? "Current plan" : "Start free";
-    if (planName === "Lifetime") return plan === "lifetime" ? "Current plan" : defaultLabel;
-    if (planName === "Pro") {
-      if (plan === "lifetime") return "Included in Lifetime";
-      if (plan === "pro_monthly" || plan === "pro_yearly") return "Current plan";
-    }
+    if (planName === "Pro" || planName === "Lifetime") return defaultLabel;
     return defaultLabel;
   };
 
   const isCurrent = (planName: string): boolean => {
     if (planName === "Free") return plan === "free";
-    if (planName === "Lifetime") return plan === "lifetime";
-    if (planName === "Pro") {
-      return plan === "pro_monthly" || plan === "pro_yearly" || plan === "lifetime";
-    }
     return false;
   };
+
+  void toast;
 
   return (
     <section id="pricing" className="py-24 relative">
@@ -175,7 +123,7 @@ export function PricingSection() {
             Simple plans, <span className="gradient-text">serious gains</span>
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">
-            Start free. Upgrade when you&apos;re ready. Cancel anytime.
+            Start free. Pro is coming soon — no payment today.
           </p>
 
           <div className="mt-8 inline-flex items-center rounded-full border border-border/60 bg-muted/50 p-1">
@@ -210,23 +158,23 @@ export function PricingSection() {
         </m.div>
 
         <div className="grid gap-6 md:grid-cols-3 items-start">
-          {PLANS.map((plan, i) => {
+          {PLANS.map((planDef, i) => {
             const price =
-              plan.monthly === null
-                ? plan.yearly
+              planDef.monthly === null
+                ? planDef.yearly
                 : interval === "yearly"
-                  ? plan.yearly
-                  : plan.monthly;
+                  ? planDef.yearly
+                  : planDef.monthly;
             const priceLabel =
-              plan.monthly === null
+              planDef.monthly === null
                 ? formatPrice(price)
-                : plan.monthly === 0
+                : planDef.monthly === 0
                   ? "₹0"
                   : formatPrice(price);
             const periodLabel =
-              plan.monthly === null
+              planDef.monthly === null
                 ? "one-time"
-                : plan.monthly === 0
+                : planDef.monthly === 0
                   ? "forever"
                   : interval === "yearly"
                     ? "/year"
@@ -234,14 +182,14 @@ export function PricingSection() {
 
             return (
               <m.div
-                key={plan.name}
+                key={planDef.name}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="relative"
               >
-                {plan.featured && (
+                {planDef.featured && (
                   <div
                     className="absolute -inset-px rounded-2xl p-px bg-[conic-gradient(from_var(--angle,0deg),var(--color-primary),var(--color-accent),var(--color-primary))]"
                     aria-hidden="true"
@@ -251,21 +199,31 @@ export function PricingSection() {
                 )}
                 <div
                   className={`relative flex h-full flex-col rounded-2xl border p-7 ${
-                    plan.featured
+                    planDef.featured
                       ? "border-transparent bg-card shadow-premium md:scale-105"
                       : "border-border/60 bg-card/60 backdrop-blur-sm"
                   }`}
                 >
-                  {plan.featured && (
+                  {planDef.featured && (
                     <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1 gradient-primary text-white border-0 shadow-glow">
                       <Sparkles className="h-3 w-3" aria-hidden="true" />
                       Most popular
                     </Badge>
                   )}
 
+                  {planDef.comingSoon && (
+                    <Badge
+                      variant="warning"
+                      className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wide"
+                      aria-label={`${planDef.name} coming soon`}
+                    >
+                      Coming Soon
+                    </Badge>
+                  )}
+
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{plan.tagline}</p>
+                    <h3 className="text-lg font-bold text-foreground">{planDef.name}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{planDef.tagline}</p>
                   </div>
 
                   <div className="mt-6 flex items-baseline gap-1">
@@ -278,29 +236,31 @@ export function PricingSection() {
                   <Button
                     type="button"
                     className={`mt-6 w-full ${
-                      plan.featured && !isCurrent(plan.name) ? "gradient-primary text-white shadow-glow" : "border-border/60"
+                      planDef.featured && !isCurrent(planDef.name) ? "gradient-primary text-white shadow-glow" : "border-border/60"
                     }`}
                     variant={
-                      isCurrent(plan.name)
+                      isCurrent(planDef.name)
                         ? "outline"
-                        : plan.featured
+                        : planDef.featured
                           ? "gradient"
                           : "outline"
                     }
                     data-magnetic="true"
-                    loading={loadingPlan === plan.name}
-                    onClick={() =>
-                      handleCta(plan.name, plan.name === "Free", plan.name === "Lifetime")
+                    onClick={() => handleCta(planDef.name, planDef.name === "Free")}
+                    aria-label={
+                      planDef.comingSoon
+                        ? `Join ${planDef.name} waitlist`
+                        : planDef.cta
                     }
                   >
-                    {ctaLabel(plan.name, plan.cta)}
+                    {ctaLabel(planDef.name, planDef.cta)}
                   </Button>
 
                   <ul className="mt-7 space-y-3 border-t border-border/60 pt-6">
-                    {plan.features.map((feature) => (
+                    {planDef.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3 text-sm text-muted-foreground">
                         <Check
-                          className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featured ? "text-primary" : "text-success"}`}
+                          className={`mt-0.5 h-4 w-4 shrink-0 ${planDef.featured ? "text-primary" : "text-success"}`}
                           aria-hidden="true"
                         />
                         <span>{feature}</span>
@@ -314,9 +274,11 @@ export function PricingSection() {
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          All plans include local-first storage. GST included where applicable.
+          All plans include local-first storage. Pro & Lifetime join the waitlist only — no charges.
         </p>
       </div>
+
+      <ProWaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
     </section>
   );
 }
