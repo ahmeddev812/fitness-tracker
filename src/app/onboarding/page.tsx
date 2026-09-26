@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useFitnessActions } from "@/hooks/useFitnessData";
+import { useFitnessActions, useFitnessData } from "@/hooks/useFitnessData";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { user } = useAuth();
   const actions = useFitnessActions();
+  const { profile } = useFitnessData();
   const { toast } = useToast();
 
   const [step, setStep] = useState(0);
@@ -79,8 +80,10 @@ export default function OnboardingPage() {
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleComplete = () => {
-    // Save profile
-    actions.updateProfile({
+    // Save profile — also write storage synchronously: `updateProfile` persists
+    // inside a setState updater, which may not flush before we navigate away
+    // (especially the full-page demo jump), leaving AuthGuard without a profile.
+    const profileUpdates = {
       name: name.trim() || user?.name || "User",
       age: age ? parseInt(age) : undefined,
       heightCm: height ? parseFloat(height) : undefined,
@@ -90,7 +93,9 @@ export default function OnboardingPage() {
       proteinTarget: parseInt(proteinTarget) || 140,
       waterTargetMl: parseInt(waterTarget) || 2500,
       gender: gender as "male" | "female" | "other" | undefined,
-    });
+    };
+    actions.updateProfile(profileUpdates);
+    storage.saveProfile({ ...profile, ...profileUpdates });
 
     // Save settings
     actions.updateSettings({
@@ -119,11 +124,20 @@ export default function OnboardingPage() {
       storage.saveWeights(demoData.weights);
       storage.saveGoals(demoData.goals);
       storage.saveActivity(demoData.activity);
-      window.location.reload();
+      // Full navigation (not reload) so we land on the dashboard with fresh state
+      window.location.href = "/dashboard";
       return;
     }
 
     toast("Profile set up! Welcome to PULSE.", "success");
+    router.push("/dashboard");
+  };
+
+  // Skip still needs a complete profile or AuthGuard bounces back here
+  const handleSkip = () => {
+    const finalName = name.trim() || user?.name || "User";
+    actions.updateProfile({ name: finalName });
+    storage.saveProfile({ ...profile, name: finalName });
     router.push("/dashboard");
   };
 
@@ -428,7 +442,7 @@ export default function OnboardingPage() {
         {/* Skip */}
         {demoChoice !== null && (
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={handleSkip}
             className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             Skip setup →

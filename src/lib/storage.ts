@@ -221,7 +221,9 @@ export function hasCompleteProfileForUser(userId?: string | null): boolean {
     const isProfileShape = (raw: string | null): boolean => {
       if (!raw) return false;
       const parsed = safeParse<Partial<UserProfile>>(raw, {});
-      return Boolean(parsed.name && parsed.age);
+      // Name only — age is optional everywhere (ProfileForm allows empty age),
+      // so requiring it here bounced users back to /onboarding after setup.
+      return Boolean(parsed.name);
     };
     if (userId && isProfileShape(localStorage.getItem(`${STORAGE_KEYS.profile}__${userId}`))) return true;
     if (isProfileShape(localStorage.getItem(STORAGE_KEYS.profile))) return true;

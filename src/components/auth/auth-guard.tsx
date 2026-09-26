@@ -7,7 +7,7 @@ import * as storage from "@/lib/storage";
 
 interface AuthGuardProps {
   children: ReactNode;
-  /** Require a completed local profile (name + age). Onboarding itself sets false. */
+  /** Require a completed local profile (name). Onboarding itself sets false. */
   requireProfile?: boolean;
 }
 
